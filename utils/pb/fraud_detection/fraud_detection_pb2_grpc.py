@@ -3,7 +3,7 @@
 import grpc
 import warnings
 
-from utils.pb.fraud_detection import fraud_detection_pb2 as utils_dot_pb_dot_fraud__detection_dot_fraud__detection__pb2
+import fraud_detection_pb2 as fraud__detection__pb2
 
 GRPC_GENERATED_VERSION = '1.78.0'
 GRPC_VERSION = grpc.__version__
@@ -18,87 +18,28 @@ except ImportError:
 if _version_not_supported:
     raise RuntimeError(
         f'The grpc package installed is at version {GRPC_VERSION},'
-        + ' but the generated code in utils/pb/fraud_detection/fraud_detection_pb2_grpc.py depends on'
+        + ' but the generated code in fraud_detection_pb2_grpc.py depends on'
         + f' grpcio>={GRPC_GENERATED_VERSION}.'
         + f' Please upgrade your grpc module to grpcio>={GRPC_GENERATED_VERSION}'
         + f' or downgrade your generated code using grpcio-tools<={GRPC_VERSION}.'
     )
 
 
-class HelloServiceStub(object):
-    """Missing associated documentation comment in .proto file."""
-
-    def __init__(self, channel):
-        """Constructor.
-
-        Args:
-            channel: A grpc.Channel.
-        """
-        self.SayHello = channel.unary_unary(
-                '/fraud_detection.HelloService/SayHello',
-                request_serializer=utils_dot_pb_dot_fraud__detection_dot_fraud__detection__pb2.HelloRequest.SerializeToString,
-                response_deserializer=utils_dot_pb_dot_fraud__detection_dot_fraud__detection__pb2.HelloResponse.FromString,
-                _registered_method=True)
-
-
-class HelloServiceServicer(object):
-    """Missing associated documentation comment in .proto file."""
-
-    def SayHello(self, request, context):
-        """Missing associated documentation comment in .proto file."""
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-
-def add_HelloServiceServicer_to_server(servicer, server):
-    rpc_method_handlers = {
-            'SayHello': grpc.unary_unary_rpc_method_handler(
-                    servicer.SayHello,
-                    request_deserializer=utils_dot_pb_dot_fraud__detection_dot_fraud__detection__pb2.HelloRequest.FromString,
-                    response_serializer=utils_dot_pb_dot_fraud__detection_dot_fraud__detection__pb2.HelloResponse.SerializeToString,
-            ),
-    }
-    generic_handler = grpc.method_handlers_generic_handler(
-            'fraud_detection.HelloService', rpc_method_handlers)
-    server.add_generic_rpc_handlers((generic_handler,))
-    server.add_registered_method_handlers('fraud_detection.HelloService', rpc_method_handlers)
-
-
- # This class is part of an EXPERIMENTAL API.
-class HelloService(object):
-    """Missing associated documentation comment in .proto file."""
-
-    @staticmethod
-    def SayHello(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(
-            request,
-            target,
-            '/fraud_detection.HelloService/SayHello',
-            utils_dot_pb_dot_fraud__detection_dot_fraud__detection__pb2.HelloRequest.SerializeToString,
-            utils_dot_pb_dot_fraud__detection_dot_fraud__detection__pb2.HelloResponse.FromString,
-            options,
-            channel_credentials,
-            insecure,
-            call_credentials,
-            compression,
-            wait_for_ready,
-            timeout,
-            metadata,
-            _registered_method=True)
-
-
 class FraudDetectionServiceStub(object):
-    """Missing associated documentation comment in .proto file."""
+    """
+    service HelloService {
+    rpc SayHello (HelloRequest) returns (HelloResponse);
+    }
+
+    message HelloRequest {
+    string name = 1;
+    }
+
+    message HelloResponse {
+    string greeting = 1;
+    }
+
+    """
 
     def __init__(self, channel):
         """Constructor.
@@ -108,13 +49,26 @@ class FraudDetectionServiceStub(object):
         """
         self.CheckFraud = channel.unary_unary(
                 '/fraud_detection.FraudDetectionService/CheckFraud',
-                request_serializer=utils_dot_pb_dot_fraud__detection_dot_fraud__detection__pb2.FraudRequest.SerializeToString,
-                response_deserializer=utils_dot_pb_dot_fraud__detection_dot_fraud__detection__pb2.FraudResponse.FromString,
+                request_serializer=fraud__detection__pb2.FraudRequest.SerializeToString,
+                response_deserializer=fraud__detection__pb2.FraudResponse.FromString,
                 _registered_method=True)
 
 
 class FraudDetectionServiceServicer(object):
-    """Missing associated documentation comment in .proto file."""
+    """
+    service HelloService {
+    rpc SayHello (HelloRequest) returns (HelloResponse);
+    }
+
+    message HelloRequest {
+    string name = 1;
+    }
+
+    message HelloResponse {
+    string greeting = 1;
+    }
+
+    """
 
     def CheckFraud(self, request, context):
         """Missing associated documentation comment in .proto file."""
@@ -127,8 +81,8 @@ def add_FraudDetectionServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'CheckFraud': grpc.unary_unary_rpc_method_handler(
                     servicer.CheckFraud,
-                    request_deserializer=utils_dot_pb_dot_fraud__detection_dot_fraud__detection__pb2.FraudRequest.FromString,
-                    response_serializer=utils_dot_pb_dot_fraud__detection_dot_fraud__detection__pb2.FraudResponse.SerializeToString,
+                    request_deserializer=fraud__detection__pb2.FraudRequest.FromString,
+                    response_serializer=fraud__detection__pb2.FraudResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -139,7 +93,20 @@ def add_FraudDetectionServiceServicer_to_server(servicer, server):
 
  # This class is part of an EXPERIMENTAL API.
 class FraudDetectionService(object):
-    """Missing associated documentation comment in .proto file."""
+    """
+    service HelloService {
+    rpc SayHello (HelloRequest) returns (HelloResponse);
+    }
+
+    message HelloRequest {
+    string name = 1;
+    }
+
+    message HelloResponse {
+    string greeting = 1;
+    }
+
+    """
 
     @staticmethod
     def CheckFraud(request,
@@ -156,8 +123,8 @@ class FraudDetectionService(object):
             request,
             target,
             '/fraud_detection.FraudDetectionService/CheckFraud',
-            utils_dot_pb_dot_fraud__detection_dot_fraud__detection__pb2.FraudRequest.SerializeToString,
-            utils_dot_pb_dot_fraud__detection_dot_fraud__detection__pb2.FraudResponse.FromString,
+            fraud__detection__pb2.FraudRequest.SerializeToString,
+            fraud__detection__pb2.FraudResponse.FromString,
             options,
             channel_credentials,
             insecure,
