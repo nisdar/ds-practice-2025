@@ -31,7 +31,7 @@ def call_fraud_detection(card_number, order_amount):
         request_obj = fraud_detection.FraudRequest(card_number=card_number, order_amount=order_amount)
         # Call the service through the stub object.
         response = stub.CheckFraud(request_obj)
-    return response.greeting
+    return response.is_fraud
 
 
 # Import Flask.
@@ -48,17 +48,18 @@ app = Flask(__name__)
 CORS(app, resources={r'/*': {'origins': '*'}})
 
 # Define a GET endpoint.
-"""
+
 @app.route('/', methods=['GET'])
 def index():
     """
     #Responds with 'Hello, [name]' when a GET request is made to '/' endpoint.
-"""
+    """
     # Test the fraud-detection gRPC service.
-    response = greet(name='orchestrator')
+    #response = greet(name='orchestrator')
+    response = f"card=123, amount=1, is_fraud={call_fraud_detection('123', 1)}" + f"\ncard=999, amount=1, is_fraud={call_fraud_detection('999', 1)}" + f"\ncard=123, amount=2000, is_fraud={call_fraud_detection('123', 2000)}"
     # Return the response.
     return response
-"""
+
 
 @app.route('/checkout', methods=['POST'])
 def checkout():
@@ -69,6 +70,8 @@ def checkout():
     request_data = json.loads(request.data)
     # Print request object data
     print("Request Data:", request_data.get('items'))
+    
+    #fraud = call_fraud_detection()
 
     # Dummy response following the provided YAML specification for the bookstore
     order_status_response = {
