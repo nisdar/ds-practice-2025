@@ -8,7 +8,13 @@ service TransactionVerificationService {
 
 message VerificationRequest {
     repeated ItemData items = 1;
-    CreditCardData creditCard = 2;
+    User user = 2;
+    CreditCardData creditCard = 3;
+    Comment comment = 4;
+    BillingAddress billingAddress = 5;
+    string shippingMethod = 6;
+    bool giftWrapping = 7;
+    bool termsAccepted = 8;
 }
 
 message VerificationResponse {
@@ -20,12 +26,28 @@ message ItemData {
     string quantity = 2;
 }
 
+message User {
+    string name = 1;
+    string contact = 2;
+}
+
 message CreditCardData {
     string number = 1;
     string expirationDate = 2;
     string cvv = 3;
 }
 
+message Comment {
+    string comment = 1;
+}
+
+message BillingAddress {
+    string street = 1;
+    string city = 2;
+    string state = 3;
+    string zip = 4;
+    string country = 5;
+}
 
 
 
