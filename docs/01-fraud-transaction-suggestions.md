@@ -42,6 +42,11 @@ The `transaction_verification` microservice is concerned with verifying all the 
 - `CVV` - three-number check; we will check, whether there is some logic behind this number.
 - `Comment` - mayhaps limit to alphanumeric characters with a few additions; mayhaps not.
 - `Billing address` fields will be checked for standard formatting.
+    - `Street address`
+    - `City/Town`
+    - `State`
+    - `Postal Code`
+    - `Country`
 - `Shipping method` - can only be "Standard", "Express" or "Next-day".
 - `Gift Wrapping` - can only be represented by a boolean.
 - `Accept T&C` - must be checked; can only be represented by a boolean.
