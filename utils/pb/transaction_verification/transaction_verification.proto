@@ -25,3 +25,18 @@ message CreditCardData {
     string expirationDate = 2;
     string cvv = 3;
 }
+
+
+
+
+service HelloService {
+    rpc SayHello (HelloRequest) returns (HelloResponse);
+}
+
+message HelloRequest {
+    string name = 1;
+}
+
+message HelloResponse {
+    string greeting = 1;
+}

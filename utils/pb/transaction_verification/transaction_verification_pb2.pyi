@@ -37,3 +37,15 @@ class CreditCardData(_message.Message):
     expirationDate: str
     cvv: str
     def __init__(self, number: _Optional[str] = ..., expirationDate: _Optional[str] = ..., cvv: _Optional[str] = ...) -> None: ...
+
+class HelloRequest(_message.Message):
+    __slots__ = ("name",)
+    NAME_FIELD_NUMBER: _ClassVar[int]
+    name: str
+    def __init__(self, name: _Optional[str] = ...) -> None: ...
+
+class HelloResponse(_message.Message):
+    __slots__ = ("greeting",)
+    GREETING_FIELD_NUMBER: _ClassVar[int]
+    greeting: str
+    def __init__(self, greeting: _Optional[str] = ...) -> None: ...

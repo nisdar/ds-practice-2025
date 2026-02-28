@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1etransaction_verification.proto\x12\x18transaction_verification\"\x86\x01\n\x13VerificationRequest\x12\x31\n\x05items\x18\x01 \x03(\x0b\x32\".transaction_verification.ItemData\x12<\n\ncreditCard\x18\x02 \x01(\x0b\x32(.transaction_verification.CreditCardData\"\'\n\x14VerificationResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\"*\n\x08ItemData\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x10\n\x08quantity\x18\x02 \x01(\t\"E\n\x0e\x43reditCardData\x12\x0e\n\x06number\x18\x01 \x01(\t\x12\x16\n\x0e\x65xpirationDate\x18\x02 \x01(\t\x12\x0b\n\x03\x63vv\x18\x03 \x01(\t2\x94\x01\n\x1eTransactionVerificationService\x12r\n\x11VerifyTransaction\x12-.transaction_verification.VerificationRequest\x1a..transaction_verification.VerificationResponseb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1etransaction_verification.proto\x12\x18transaction_verification\"\x86\x01\n\x13VerificationRequest\x12\x31\n\x05items\x18\x01 \x03(\x0b\x32\".transaction_verification.ItemData\x12<\n\ncreditCard\x18\x02 \x01(\x0b\x32(.transaction_verification.CreditCardData\"\'\n\x14VerificationResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\"*\n\x08ItemData\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x10\n\x08quantity\x18\x02 \x01(\t\"E\n\x0e\x43reditCardData\x12\x0e\n\x06number\x18\x01 \x01(\t\x12\x16\n\x0e\x65xpirationDate\x18\x02 \x01(\t\x12\x0b\n\x03\x63vv\x18\x03 \x01(\t\"\x1c\n\x0cHelloRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\"!\n\rHelloResponse\x12\x10\n\x08greeting\x18\x01 \x01(\t2\x94\x01\n\x1eTransactionVerificationService\x12r\n\x11VerifyTransaction\x12-.transaction_verification.VerificationRequest\x1a..transaction_verification.VerificationResponse2k\n\x0cHelloService\x12[\n\x08SayHello\x12&.transaction_verification.HelloRequest\x1a\'.transaction_verification.HelloResponseb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -39,6 +39,12 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_ITEMDATA']._serialized_end=280
   _globals['_CREDITCARDDATA']._serialized_start=282
   _globals['_CREDITCARDDATA']._serialized_end=351
-  _globals['_TRANSACTIONVERIFICATIONSERVICE']._serialized_start=354
-  _globals['_TRANSACTIONVERIFICATIONSERVICE']._serialized_end=502
+  _globals['_HELLOREQUEST']._serialized_start=353
+  _globals['_HELLOREQUEST']._serialized_end=381
+  _globals['_HELLORESPONSE']._serialized_start=383
+  _globals['_HELLORESPONSE']._serialized_end=416
+  _globals['_TRANSACTIONVERIFICATIONSERVICE']._serialized_start=419
+  _globals['_TRANSACTIONVERIFICATIONSERVICE']._serialized_end=567
+  _globals['_HELLOSERVICE']._serialized_start=569
+  _globals['_HELLOSERVICE']._serialized_end=676
 # @@protoc_insertion_point(module_scope)

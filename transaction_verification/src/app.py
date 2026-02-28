@@ -14,6 +14,20 @@ import grpc
 from concurrent import futures
 
 
+# Create a class to define the server functions, derived from
+# fraud_detection_pb2_grpc.HelloServiceServicer
+class HelloService(transaction_verification_grpc.HelloServiceServicer):
+    # Create an RPC function to say hello
+    def SayHello(self, request, context):
+        # Create a HelloResponse object
+        response = transaction_verification.HelloResponse()
+        # Set the greeting field of the response object
+        response.greeting = "Hello, " + request.name
+        # Print the greeting message
+        print(response.greeting)
+        # Return the response object
+        return response
+
 # Create a class to define the server functions
 class TransactionVerificationService(transaction_verification_grpc.TransactionVerificationServiceServicer):
     def VerifyTransaction(self, request, context):
@@ -32,6 +46,7 @@ class TransactionVerificationService(transaction_verification_grpc.TransactionVe
 def serve():
     # Create a gRPC server
     server = grpc.server(futures.ThreadPoolExecutor())
+    transaction_verification_grpc.add_HelloServiceServicer_to_server(HelloService(), server)
     transaction_verification_grpc.add_TransactionVerificationServiceServicer_to_server(TransactionVerificationService(), server)
     # Listen on port 50051
     port = "50052"

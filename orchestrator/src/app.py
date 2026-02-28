@@ -7,25 +7,44 @@ import os
 FILE = __file__ if '__file__' in globals() else os.getenv("PYTHONFILE", "")
 fraud_detection_grpc_path = os.path.abspath(os.path.join(FILE, '../../../utils/pb/fraud_detection'))
 transaction_verification_grpc_path = os.path.abspath(os.path.join(FILE, '../../../utils/pb/transaction_verification'))
+""" TODO UNCOMMENT
+suggestions_grpc_path = os.path.abspath(os.path.join(FILE, '../../../utils/pb/suggestions'))"""
 sys.path.insert(0, fraud_detection_grpc_path)
 sys.path.insert(0, transaction_verification_grpc_path)
+""" TODO UNCOMMENT
+sys.path.insert(0, suggestions_grpc_path)"""
 import fraud_detection_pb2 as fraud_detection
 import fraud_detection_pb2_grpc as fraud_detection_grpc
 import transaction_verification_pb2 as transaction_verification
 import transaction_verification_pb2_grpc as transaction_verification_grpc
+""" TODO UNCOMMENT
+import suggestions_pb2 as suggestions
+import suggestions_pb2_grpc as suggestions_grpc
+"""
 
 import grpc
 
-"""
-def greet(name='you'):
+def greet(name='admin'):
     # Establish a connection with the fraud-detection gRPC service.
     with grpc.insecure_channel('fraud_detection:50051') as channel:
         # Create a stub object.
-        stub = fraud_detection_grpc.HelloServiceStub(channel)
+        fraud_stub = fraud_detection_grpc.HelloServiceStub(channel)
         # Call the service through the stub object.
-        response = stub.SayHello(fraud_detection.HelloRequest(name=name))
-    return response.greeting
-"""
+        fraud_response = fraud_stub.SayHello(fraud_detection.HelloRequest(name=name))
+    with grpc.insecure_channel('transaction_verification:50052') as channel:
+        # Create a stub object.
+        transaction_stub = transaction_verification_grpc.HelloServiceStub(channel)
+        # Call the service through the stub object.
+        transaction_response = transaction_stub.SayHello(transaction_verification.HelloRequest(name=name))
+    """ TODO UNCOMMENT
+    with grpc.insecure_channel('suggestions:50053') as channel:
+        # Create a stub object.
+        suggestions_stub = suggestions_grpc.HelloServiceStub(channel)
+        # Call the service through the stub object.
+        suggestions_response = suggestions_stub.SayHello(suggestions.HelloRequest(name=name))
+    """
+    # TODO add transaction_response.greeting and suggestions_response.greeting
+    return f"Fraud_detection: {fraud_response.greeting} Transaction_verification: {transaction_response.greeting}"
 
 def call_fraud_detection(card_number, order_amount):
     # Establish a connection with the fraud-detection gRPC service.
@@ -68,8 +87,8 @@ def index():
     #Responds with 'Hello, [name]' when a GET request is made to '/' endpoint.
     """
     # Test the fraud-detection gRPC service.
-    #response = greet(name='orchestrator')
-    response = f"card=123, amount=1, is_fraud={call_fraud_detection('123', 1)}" + f"\ncard=999, amount=1, is_fraud={call_fraud_detection('999', 1)}" + f"\ncard=123, amount=2000, is_fraud={call_fraud_detection('123', 2000)}"
+    response = greet(name='admin;')
+    #response = f"card=123, amount=1, is_fraud={call_fraud_detection('123', 1)}" + f"\ncard=999, amount=1, is_fraud={call_fraud_detection('999', 1)}" + f"\ncard=123, amount=2000, is_fraud={call_fraud_detection('123', 2000)}"
     # Return the response.
     return response
 
