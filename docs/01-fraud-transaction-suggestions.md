@@ -35,6 +35,7 @@ The method `call_fraud_detection(string, float)` takes the card number and order
 # `transaction_verification` microservice
 
 The `transaction_verification` microservice is concerned with verifying all the information sent by the user. This means checking the validity of the following fields:
+- `Items` - do items exist, are quantities valid?
 - `Name` - do we have at least two names separated with a space, only alphabetic (English only) characters?
 - `Contact` - arguably, this could be both a phone number or an email. We will assume that `contact` contains email information as this is what is provided in the example.
 - `Credit Card Number` - we will use real credit card logic for this (TODO).
