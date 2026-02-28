@@ -18,13 +18,13 @@ class VerificationRequest(_message.Message):
     TERMSACCEPTED_FIELD_NUMBER: _ClassVar[int]
     items: _containers.RepeatedCompositeFieldContainer[ItemData]
     user: User
-    creditCard: CreditCardData
+    creditCard: CreditCard
     comment: Comment
     billingAddress: BillingAddress
     shippingMethod: str
     giftWrapping: bool
     termsAccepted: bool
-    def __init__(self, items: _Optional[_Iterable[_Union[ItemData, _Mapping]]] = ..., user: _Optional[_Union[User, _Mapping]] = ..., creditCard: _Optional[_Union[CreditCardData, _Mapping]] = ..., comment: _Optional[_Union[Comment, _Mapping]] = ..., billingAddress: _Optional[_Union[BillingAddress, _Mapping]] = ..., shippingMethod: _Optional[str] = ..., giftWrapping: bool = ..., termsAccepted: bool = ...) -> None: ...
+    def __init__(self, items: _Optional[_Iterable[_Union[ItemData, _Mapping]]] = ..., user: _Optional[_Union[User, _Mapping]] = ..., creditCard: _Optional[_Union[CreditCard, _Mapping]] = ..., comment: _Optional[_Union[Comment, _Mapping]] = ..., billingAddress: _Optional[_Union[BillingAddress, _Mapping]] = ..., shippingMethod: _Optional[str] = ..., giftWrapping: bool = ..., termsAccepted: bool = ...) -> None: ...
 
 class VerificationResponse(_message.Message):
     __slots__ = ("success",)
@@ -48,7 +48,7 @@ class User(_message.Message):
     contact: str
     def __init__(self, name: _Optional[str] = ..., contact: _Optional[str] = ...) -> None: ...
 
-class CreditCardData(_message.Message):
+class CreditCard(_message.Message):
     __slots__ = ("number", "expirationDate", "cvv")
     NUMBER_FIELD_NUMBER: _ClassVar[int]
     EXPIRATIONDATE_FIELD_NUMBER: _ClassVar[int]
