@@ -73,7 +73,7 @@ class TransactionVerificationService(transaction_verification_grpc.TransactionVe
                 re.fullmatch(country_regex, address.country) is not None
             )
         def validate_shipping_method(method):
-            return method in ["Standard", "Express", "Next-day"]
+            return method in ["Standard", "Express", "Next-Day"]
         
         # items
         if not all(validate_item(item) for item in request.items):

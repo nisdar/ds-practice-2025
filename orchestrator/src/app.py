@@ -15,7 +15,7 @@ sys.path.insert(0, transaction_verification_grpc_path)
 sys.path.insert(0, suggestions_grpc_path)"""
 import fraud_detection_pb2 as fraud_detection
 import fraud_detection_pb2_grpc as fraud_detection_grpc
-import transaction_verification_pb2 as transaction_verification
+import transaction_verification_pb2 as tv_pb2
 import transaction_verification_pb2_grpc as transaction_verification_grpc
 """ TODO UNCOMMENT
 import suggestions_pb2 as suggestions
@@ -56,22 +56,55 @@ def call_fraud_detection(card_number, order_amount):
         response = stub.CheckFraud(request_obj)
     return response.is_fraud
 
-def call_transaction_verification(items, card, comment, billingAddress, shippingMethod, giftWrapping, termsAccepted):
-    # Establish a connection with the fraud-detection gRPC service.
+def call_transaction_verification(items, user, card, comment, billing_address, shipping_method, gift_wrapping, terms_accepted):
+    ### due to dictionary usage, transformed to PB2 dictionaries with help from Le Chat
+    # Convert items
+    pb_items = []
+    for item in items:
+        pb_item = tv_pb2.ItemData(name=item['name'], quantity=str(item['quantity']))
+        pb_items.append(pb_item)
+
+    # Convert user
+    pb_user = tv_pb2.User(name=user['name'], contact=user['contact'])
+
+    # Convert credit card
+    pb_card = tv_pb2.CreditCard(
+        number=card['number'],
+        expirationDate=card['expirationDate'],
+        cvv=card['cvv']
+    )
+
+    # Convert comment
+    pb_comment = tv_pb2.Comment(comment=comment)
+
+    # Convert billing address
+    pb_billing_address = tv_pb2.BillingAddress(
+        street=billing_address['street'],
+        city=billing_address['city'],
+        state=billing_address['state'],
+        zip=billing_address['zip'],
+        country=billing_address['country']
+    )
+
+    # Build the request
+    request_obj = tv_pb2.VerificationRequest(
+        items=pb_items,
+        user=pb_user,
+        creditCard=pb_card,
+        comment=pb_comment,
+        billingAddress=pb_billing_address,
+        shippingMethod=shipping_method,
+        giftWrapping=gift_wrapping,
+        termsAccepted=terms_accepted
+    )
+
     with grpc.insecure_channel('transaction_verification:50052') as channel:
         # Create a stub object.
         stub = transaction_verification_grpc.TransactionVerificationServiceStub(channel)
-        request_obj = transaction_verification.VerificationRequest(
-            items=items, user=user, creditCard=card, 
-            comment=comment, billingAddress=billingAddress, 
-            shippingMethod=shippingMethod, 
-            giftWrapping=giftWrapping, 
-            termsAccepted=termsAccepted
-        )
         # Call the service through the stub object.
         response = stub.VerifyTransaction(request_obj)
     # TODO response.comment might have not-great formatting
-    return response.success + " " + response.comment
+    return response# + " " + response.comment
 
 # Import Flask.
 # Flask is a web framework for Python.
@@ -109,31 +142,31 @@ def checkout():
     request_data = json.loads(request.data)
     # Print request object data
     items = request_data.get('items')
+    ### TODO currently only used for FRAUD, not transaction verify
     amount = sum([item['quantity'] for item in items])
+    user = request_data.get('user')
     card = request_data.get('creditCard')
-    comment = request_data.get('comment')
-    billingAddress = request_data.get('billingAddress')
-    shippingMethod = request_data.get('shippingMethod')
-    giftWrapping = request_data.get('giftWrapping')
-    termsAccepted = request_data.get('termsAccepted')
+    comment = request_data.get('userComment')
+    billing_address = request_data.get('billingAddress')
+    shipping_method = request_data.get('shippingMethod')
+    gift_wrapping = request_data.get('giftWrapping')
+    terms_accepted = request_data.get('termsAccepted')
 
     print("Request Data:", request_data)
     
-    if not call_transaction_verification(
-            items, card, comment, 
-            billingAddress, shippingMethod, 
-            giftWrapping, termsAccepted
-        ):
-        status = "Order Rejected"
-    else:
+    transaction_verification_response = call_transaction_verification(items, user, card, comment, billing_address, shipping_method, gift_wrapping, terms_accepted)
+    
+    if transaction_verification_response.success:
         status = "Order Approved"
-
-    """
-    fraud = call_fraud_detection(card['number'], amount)
-    status = "Order Approved"
-    if fraud:
+    else:
         status = "Order Rejected"
-    """
+    print(f"Transaction verification: {status}")
+
+    fraud = call_fraud_detection(card['number'], amount)
+    print(f"Fraud: {fraud}")
+    #status = "Order Approved"
+    #if fraud:
+    #    status = "Order Rejected"
 
     # Dummy response following the provided YAML specification for the bookstore
     order_status_response = {
