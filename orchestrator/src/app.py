@@ -56,15 +56,22 @@ def call_fraud_detection(card_number, order_amount):
         response = stub.CheckFraud(request_obj)
     return response.is_fraud
 
-def call_transaction_verification(items, card):
+def call_transaction_verification(items, card, comment, billingAddress, shippingMethod, giftWrapping, termsAccepted):
     # Establish a connection with the fraud-detection gRPC service.
     with grpc.insecure_channel('transaction_verification:50052') as channel:
         # Create a stub object.
         stub = transaction_verification_grpc.TransactionVerificationServiceStub(channel)
-        request_obj = transaction_verification.VerificationRequest(items=items, creditCard=card)
+        request_obj = transaction_verification.VerificationRequest(
+            items=items, user=user, creditCard=card, 
+            comment=comment, billingAddress=billingAddress, 
+            shippingMethod=shippingMethod, 
+            giftWrapping=giftWrapping, 
+            termsAccepted=termsAccepted
+        )
         # Call the service through the stub object.
         response = stub.VerifyTransaction(request_obj)
-    return response.success
+    # TODO response.comment might have not-great formatting
+    return response.success + " " + response.comment
 
 # Import Flask.
 # Flask is a web framework for Python.
@@ -104,18 +111,29 @@ def checkout():
     items = request_data.get('items')
     amount = sum([item['quantity'] for item in items])
     card = request_data.get('creditCard')
+    comment = request_data.get('comment')
+    billingAddress = request_data.get('billingAddress')
+    shippingMethod = request_data.get('shippingMethod')
+    giftWrapping = request_data.get('giftWrapping')
+    termsAccepted = request_data.get('termsAccepted')
 
     print("Request Data:", request_data)
     
+    if not call_transaction_verification(
+            items, card, comment, 
+            billingAddress, shippingMethod, 
+            giftWrapping, termsAccepted
+        ):
+        status = "Order Rejected"
+    else:
+        status = "Order Approved"
+
+    """
     fraud = call_fraud_detection(card['number'], amount)
     status = "Order Approved"
     if fraud:
         status = "Order Rejected"
-    
-    #TODO: fix
-    #if not call_transaction_verification(items, card):
-    #    status = "Order Rejected"
-
+    """
 
     # Dummy response following the provided YAML specification for the bookstore
     order_status_response = {

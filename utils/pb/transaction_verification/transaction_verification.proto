@@ -19,6 +19,7 @@ message VerificationRequest {
 
 message VerificationResponse {
     bool success = 1;
+    optional string comment = 2;
 }
 
 message ItemData {

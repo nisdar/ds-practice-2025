@@ -27,10 +27,12 @@ class VerificationRequest(_message.Message):
     def __init__(self, items: _Optional[_Iterable[_Union[ItemData, _Mapping]]] = ..., user: _Optional[_Union[User, _Mapping]] = ..., creditCard: _Optional[_Union[CreditCard, _Mapping]] = ..., comment: _Optional[_Union[Comment, _Mapping]] = ..., billingAddress: _Optional[_Union[BillingAddress, _Mapping]] = ..., shippingMethod: _Optional[str] = ..., giftWrapping: bool = ..., termsAccepted: bool = ...) -> None: ...
 
 class VerificationResponse(_message.Message):
-    __slots__ = ("success",)
+    __slots__ = ("success", "comment")
     SUCCESS_FIELD_NUMBER: _ClassVar[int]
+    COMMENT_FIELD_NUMBER: _ClassVar[int]
     success: bool
-    def __init__(self, success: bool = ...) -> None: ...
+    comment: str
+    def __init__(self, success: bool = ..., comment: _Optional[str] = ...) -> None: ...
 
 class ItemData(_message.Message):
     __slots__ = ("name", "quantity")
