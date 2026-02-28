@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package fraud_detection;
+package suggestions;
 
 /*
 service HelloService {
@@ -17,15 +17,21 @@ message HelloResponse {
 */
 
 
-service FraudDetectionService {
-    rpc CheckFraud (FraudRequest) returns (FraudResponse);
+service SuggestionsService {
+    rpc SuggestBooks (SuggestionRequest) returns (SuggestionResponse);
 }
 
-message FraudRequest {
+message SuggestionRequest {
     string card_number = 1;
     float order_amount = 2;
 }
 
-message FraudResponse {
-    bool is_fraud = 1;
+message Book {
+    string id = 1;
+    string author = 2;
+    string title = 3;
+}
+
+message SuggestionResponse {
+    repeated Book books = 1;
 }
