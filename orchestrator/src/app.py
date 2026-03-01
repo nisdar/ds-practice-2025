@@ -10,8 +10,8 @@ transaction_verification_grpc_path = os.path.abspath(os.path.join(FILE, '../../.
 suggestions_grpc_path = os.path.abspath(os.path.join(FILE, '../../../utils/pb/suggestions'))
 
 sys.path.insert(0, fraud_detection_grpc_path)
-sys.path.insert(1, transaction_verification_grpc_path)
-sys.path.insert(2, suggestions_grpc_path)
+sys.path.insert(0, transaction_verification_grpc_path)
+sys.path.insert(0, suggestions_grpc_path)
 
 import fraud_detection_pb2 as fraud_detection
 import fraud_detection_pb2_grpc as fraud_detection_grpc
@@ -123,6 +123,17 @@ def call_suggestions(card_number, order_amount):
         ]
     return result
 
+# Threading! with ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor
+executor = ThreadPoolExecutor(max_workers=5)
+## asynchronously calling fraud_detection
+def async_fraud_detection(card_number, order_amount):
+    return executor.submit(call_fraud_detection, card_number, order_amount)
+def async_transaction_verification(items, user, card, comment, billing_address, shipping_method, gift_wrapping, terms_accepted):
+    return executor.submit(call_transaction_verification, items, user, card, comment, billing_address, shipping_method, gift_wrapping, terms_accepted)
+def async_suggestions(card_number, order_amount):
+    return executor.submit(call_suggestions, card_number, order_amount)
+
 # Import Flask.
 # Flask is a web framework for Python.
 # It allows you to build a web application quickly.
@@ -170,25 +181,32 @@ def checkout():
 
     print("Request Data:", request_data)
     
-    transaction_verification_response = call_transaction_verification(items, user, card, comment, billing_address, shipping_method, gift_wrapping, terms_accepted)
-    
+    transaction_verification_future = async_transaction_verification(items, user, card, comment, billing_address, shipping_method, gift_wrapping, terms_accepted)
+    transaction_verification_response = transaction_verification_future.result()
+
     if transaction_verification_response.success:
         status = "Order Approved"
     else:
         status = "Order Rejected"
     print(f"Transaction verification: {status}")
 
-    fraud = call_fraud_detection(card['number'], amount)
-    print(f"Fraud: {fraud}")
+    fraud_detection_future = async_fraud_detection(card['number'], amount)
+    fraud_detection_response = fraud_detection_future.result()
+
+    print(f"Fraud: {fraud_detection_response}")
     #status = "Order Approved"
     #if fraud:
     #    status = "Order Rejected"
+
+    suggestions_future = async_suggestions('123', 1)
+    suggestions_response = suggestions_future.result()
+    print(f"Suggestions ID-s: {[item['id'] for item in suggestions_response]}")
 
     # Dummy response following the provided YAML specification for the bookstore
     order_status_response = {
         'orderId': '12345',
         'status': status,
-        'suggestedBooks': call_suggestions('123', 1)
+        'suggestedBooks': suggestions_response
     }
 
     return order_status_response

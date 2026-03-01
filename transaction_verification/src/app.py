@@ -75,6 +75,8 @@ class TransactionVerificationService(transaction_verification_grpc.TransactionVe
         def validate_shipping_method(method):
             return method in ["Standard", "Express", "Next-Day"]
         
+        print(f"Checking transaction for card {request.creditCard.number} and user {request.user.name}")
+
         # items
         if not all(validate_item(item) for item in request.items):
             return transaction_verification.VerificationResponse(success=False, comment="Item validation failed")
