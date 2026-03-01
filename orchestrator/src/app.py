@@ -13,8 +13,8 @@ sys.path.insert(1, suggestions_grpc_path)
 
 import fraud_detection_pb2 as fraud_detection
 import fraud_detection_pb2_grpc as fraud_detection_grpc
-import transaction_verification_pb2 as transaction_verification
-import transaction_verification_pb2_grpc as transaction_verification_grpc
+#import transaction_verification_pb2 as transaction_verification
+#import transaction_verification_pb2_grpc as transaction_verification_grpc
 
 import suggestions_pb2 as suggestions
 import suggestions_pb2_grpc as suggestions_grpc
