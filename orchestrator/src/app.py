@@ -7,20 +7,18 @@ import os
 FILE = __file__ if '__file__' in globals() else os.getenv("PYTHONFILE", "")
 fraud_detection_grpc_path = os.path.abspath(os.path.join(FILE, '../../../utils/pb/fraud_detection'))
 transaction_verification_grpc_path = os.path.abspath(os.path.join(FILE, '../../../utils/pb/transaction_verification'))
-""" TODO UNCOMMENT
-suggestions_grpc_path = os.path.abspath(os.path.join(FILE, '../../../utils/pb/suggestions'))"""
+suggestions_grpc_path = os.path.abspath(os.path.join(FILE, '../../../utils/pb/suggestions'))
+
 sys.path.insert(0, fraud_detection_grpc_path)
-sys.path.insert(0, transaction_verification_grpc_path)
-""" TODO UNCOMMENT
-sys.path.insert(0, suggestions_grpc_path)"""
+sys.path.insert(1, transaction_verification_grpc_path)
+sys.path.insert(2, suggestions_grpc_path)
+
 import fraud_detection_pb2 as fraud_detection
 import fraud_detection_pb2_grpc as fraud_detection_grpc
-import transaction_verification_pb2 as tv_pb2
+import transaction_verification_pb2 as transaction_verification
 import transaction_verification_pb2_grpc as transaction_verification_grpc
-""" TODO UNCOMMENT
 import suggestions_pb2 as suggestions
 import suggestions_pb2_grpc as suggestions_grpc
-"""
 
 import grpc
 
@@ -36,15 +34,13 @@ def greet(name='admin'):
         transaction_stub = transaction_verification_grpc.HelloServiceStub(channel)
         # Call the service through the stub object.
         transaction_response = transaction_stub.SayHello(transaction_verification.HelloRequest(name=name))
-    """ TODO UNCOMMENT
     with grpc.insecure_channel('suggestions:50053') as channel:
         # Create a stub object.
         suggestions_stub = suggestions_grpc.HelloServiceStub(channel)
         # Call the service through the stub object.
         suggestions_response = suggestions_stub.SayHello(suggestions.HelloRequest(name=name))
-    """
     # TODO add transaction_response.greeting and suggestions_response.greeting
-    return f"Fraud_detection: {fraud_response.greeting} Transaction_verification: {transaction_response.greeting}"
+    return f"Fraud_detection: {fraud_response.greeting} Transaction_verification: {transaction_response.greeting} Suggestions: {suggestions_response.greeting}"
 
 def call_fraud_detection(card_number, order_amount):
     # Establish a connection with the fraud-detection gRPC service.
@@ -57,28 +53,28 @@ def call_fraud_detection(card_number, order_amount):
     return response.is_fraud
 
 def call_transaction_verification(items, user, card, comment, billing_address, shipping_method, gift_wrapping, terms_accepted):
-    ### due to dictionary usage, transformed to PB2 dictionaries with help from Le Chat
+    ### due to dictionary usage, transformed to PB2 dictionaries with help from Mistral Le Chat
     # Convert items
     pb_items = []
     for item in items:
-        pb_item = tv_pb2.ItemData(name=item['name'], quantity=str(item['quantity']))
+        pb_item = transaction_verification.ItemData(name=item['name'], quantity=str(item['quantity']))
         pb_items.append(pb_item)
 
     # Convert user
-    pb_user = tv_pb2.User(name=user['name'], contact=user['contact'])
+    pb_user = transaction_verification.User(name=user['name'], contact=user['contact'])
 
     # Convert credit card
-    pb_card = tv_pb2.CreditCard(
+    pb_card = transaction_verification.CreditCard(
         number=card['number'],
         expirationDate=card['expirationDate'],
         cvv=card['cvv']
     )
 
     # Convert comment
-    pb_comment = tv_pb2.Comment(comment=comment)
+    pb_comment = transaction_verification.Comment(comment=comment)
 
     # Convert billing address
-    pb_billing_address = tv_pb2.BillingAddress(
+    pb_billing_address = transaction_verification.BillingAddress(
         street=billing_address['street'],
         city=billing_address['city'],
         state=billing_address['state'],
@@ -87,7 +83,7 @@ def call_transaction_verification(items, user, card, comment, billing_address, s
     )
 
     # Build the request
-    request_obj = tv_pb2.VerificationRequest(
+    request_obj = transaction_verification.VerificationRequest(
         items=pb_items,
         user=pb_user,
         creditCard=pb_card,
@@ -105,6 +101,27 @@ def call_transaction_verification(items, user, card, comment, billing_address, s
         response = stub.VerifyTransaction(request_obj)
     # TODO response.comment might have not-great formatting
     return response# + " " + response.comment
+
+def call_suggestions(card_number, order_amount):
+    # Establish a connection with the fraud-detection gRPC service.
+    with grpc.insecure_channel('suggestions:50053') as channel:
+        # Create a stub object.
+        stub = suggestions_grpc.SuggestionsServiceStub(channel)
+        request_obj = suggestions.SuggestionRequest(card_number=card_number, order_amount=order_amount)
+        # Call the service through the stub object.
+        response = stub.SuggestBooks(request_obj)
+
+        books_list = []
+
+        result = [
+            {
+                "id": book.id,
+                "title": book.title,
+                "author": book.author
+            }
+            for book in response.books
+        ]
+    return result
 
 # Import Flask.
 # Flask is a web framework for Python.
@@ -128,7 +145,6 @@ def index():
     """
     # Test the fraud-detection gRPC service.
     response = greet(name='admin;')
-    #response = f"card=123, amount=1, is_fraud={call_fraud_detection('123', 1)}" + f"\ncard=999, amount=1, is_fraud={call_fraud_detection('999', 1)}" + f"\ncard=123, amount=2000, is_fraud={call_fraud_detection('123', 2000)}"
     # Return the response.
     return response
 
@@ -172,10 +188,7 @@ def checkout():
     order_status_response = {
         'orderId': '12345',
         'status': status,
-        'suggestedBooks': [
-            {'bookId': '123', 'title': 'The Best Book', 'author': 'Author 1'},
-            {'bookId': '456', 'title': 'The Second Best Book', 'author': 'Author 2'}
-        ]
+        'suggestedBooks': call_suggestions('123', 1)
     }
 
     return order_status_response
