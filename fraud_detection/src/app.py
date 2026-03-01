@@ -41,6 +41,7 @@ class FraudDetectionService(fraud_detection_grpc.FraudDetectionServiceServicer):
         is_fraud = False
         if order_amount > 1000 or card_number.startswith("999"):
             is_fraud = True
+            print("Fraud detected!")
 
         return fraud_detection.FraudResponse(is_fraud=is_fraud)
 

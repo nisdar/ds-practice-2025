@@ -6,12 +6,15 @@ import os
 # Change these lines only if strictly needed.
 FILE = __file__ if '__file__' in globals() else os.getenv("PYTHONFILE", "")
 fraud_detection_grpc_path = os.path.abspath(os.path.join(FILE, '../../../utils/pb/fraud_detection'))
+transaction_verification_grpc_path = os.path.abspath(os.path.join(FILE, '../../../utils/pb/transaction_verification'))
 sys.path.insert(0, fraud_detection_grpc_path)
 suggestions_grpc_path = os.path.abspath(os.path.join(FILE, '../../../utils/pb/suggestions'))
 sys.path.insert(1, suggestions_grpc_path)
 
 import fraud_detection_pb2 as fraud_detection
 import fraud_detection_pb2_grpc as fraud_detection_grpc
+import transaction_verification_pb2 as transaction_verification
+import transaction_verification_pb2_grpc as transaction_verification_grpc
 
 import suggestions_pb2 as suggestions
 import suggestions_pb2_grpc as suggestions_grpc
@@ -95,9 +98,21 @@ def checkout():
     # Get request object data to json
     request_data = json.loads(request.data)
     # Print request object data
-    print("Request Data:", request_data.get('items'))
+    items = request_data.get('items')
+    amount = sum([item['quantity'] for item in items])
+    card = request_data.get('creditCard')
+
+    print("Request Data:", request_data)
     
-    #fraud = call_fraud_detection()
+    fraud = call_fraud_detection(card['number'], amount)
+    status = "Order Approved"
+    if fraud:
+        status = "Order Rejected"
+    
+    #TODO: fix
+    #if not call_transaction_verification(items, card):
+    #    status = "Order Rejected"
+
 
     # Dummy response following the provided YAML specification for the bookstore
     order_status_response = {

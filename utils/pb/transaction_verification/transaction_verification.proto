@@ -1,31 +1,27 @@
 syntax = "proto3";
 
-package fraud_detection;
+package transaction_verification;
 
-/*
-service HelloService {
-    rpc SayHello (HelloRequest) returns (HelloResponse);
+service TransactionVerificationService {
+    rpc VerifyTransaction (VerificationRequest) returns (VerificationResponse);
 }
 
-message HelloRequest {
+message VerificationRequest {
+    repeated ItemData items = 1;
+    CreditCardData creditCard = 2;
+}
+
+message VerificationResponse {
+    bool success = 1;
+}
+
+message ItemData {
     string name = 1;
+    string quantity = 2;
 }
 
-message HelloResponse {
-    string greeting = 1;
-}
-*/
-
-
-service FraudDetectionService {
-    rpc CheckFraud (FraudRequest) returns (FraudResponse);
-}
-
-message FraudRequest {
-    string card_number = 1;
-    float order_amount = 2;
-}
-
-message FraudResponse {
-    bool is_fraud = 1;
+message CreditCardData {
+    string number = 1;
+    string expirationDate = 2;
+    string cvv = 3;
 }
