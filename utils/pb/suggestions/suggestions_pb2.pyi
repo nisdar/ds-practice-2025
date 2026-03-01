@@ -29,3 +29,15 @@ class SuggestionResponse(_message.Message):
     BOOKS_FIELD_NUMBER: _ClassVar[int]
     books: _containers.RepeatedCompositeFieldContainer[Book]
     def __init__(self, books: _Optional[_Iterable[_Union[Book, _Mapping]]] = ...) -> None: ...
+
+class HelloRequest(_message.Message):
+    __slots__ = ("name",)
+    NAME_FIELD_NUMBER: _ClassVar[int]
+    name: str
+    def __init__(self, name: _Optional[str] = ...) -> None: ...
+
+class HelloResponse(_message.Message):
+    __slots__ = ("greeting",)
+    GREETING_FIELD_NUMBER: _ClassVar[int]
+    greeting: str
+    def __init__(self, greeting: _Optional[str] = ...) -> None: ...

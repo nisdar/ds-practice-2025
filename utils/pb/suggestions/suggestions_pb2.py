@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x11suggestions.proto\x12\x0bsuggestions\">\n\x11SuggestionRequest\x12\x13\n\x0b\x63\x61rd_number\x18\x01 \x01(\t\x12\x14\n\x0corder_amount\x18\x02 \x01(\x02\"1\n\x04\x42ook\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0e\n\x06\x61uthor\x18\x02 \x01(\t\x12\r\n\x05title\x18\x03 \x01(\t\"6\n\x12SuggestionResponse\x12 \n\x05\x62ooks\x18\x01 \x03(\x0b\x32\x11.suggestions.Book2e\n\x12SuggestionsService\x12O\n\x0cSuggestBooks\x12\x1e.suggestions.SuggestionRequest\x1a\x1f.suggestions.SuggestionResponseb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x11suggestions.proto\x12\x0bsuggestions\">\n\x11SuggestionRequest\x12\x13\n\x0b\x63\x61rd_number\x18\x01 \x01(\t\x12\x14\n\x0corder_amount\x18\x02 \x01(\x02\"1\n\x04\x42ook\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0e\n\x06\x61uthor\x18\x02 \x01(\t\x12\r\n\x05title\x18\x03 \x01(\t\"6\n\x12SuggestionResponse\x12 \n\x05\x62ooks\x18\x01 \x03(\x0b\x32\x11.suggestions.Book\"\x1c\n\x0cHelloRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\"!\n\rHelloResponse\x12\x10\n\x08greeting\x18\x01 \x01(\t2e\n\x12SuggestionsService\x12O\n\x0cSuggestBooks\x12\x1e.suggestions.SuggestionRequest\x1a\x1f.suggestions.SuggestionResponse2Q\n\x0cHelloService\x12\x41\n\x08SayHello\x12\x19.suggestions.HelloRequest\x1a\x1a.suggestions.HelloResponseb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -37,6 +37,12 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_BOOK']._serialized_end=147
   _globals['_SUGGESTIONRESPONSE']._serialized_start=149
   _globals['_SUGGESTIONRESPONSE']._serialized_end=203
-  _globals['_SUGGESTIONSSERVICE']._serialized_start=205
-  _globals['_SUGGESTIONSSERVICE']._serialized_end=306
+  _globals['_HELLOREQUEST']._serialized_start=205
+  _globals['_HELLOREQUEST']._serialized_end=233
+  _globals['_HELLORESPONSE']._serialized_start=235
+  _globals['_HELLORESPONSE']._serialized_end=268
+  _globals['_SUGGESTIONSSERVICE']._serialized_start=270
+  _globals['_SUGGESTIONSSERVICE']._serialized_end=371
+  _globals['_HELLOSERVICE']._serialized_start=373
+  _globals['_HELLOSERVICE']._serialized_end=454
 # @@protoc_insertion_point(module_scope)

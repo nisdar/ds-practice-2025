@@ -26,20 +26,7 @@ if _version_not_supported:
 
 
 class SuggestionsServiceStub(object):
-    """
-    service HelloService {
-    rpc SayHello (HelloRequest) returns (HelloResponse);
-    }
-
-    message HelloRequest {
-    string name = 1;
-    }
-
-    message HelloResponse {
-    string greeting = 1;
-    }
-
-    """
+    """Missing associated documentation comment in .proto file."""
 
     def __init__(self, channel):
         """Constructor.
@@ -55,20 +42,7 @@ class SuggestionsServiceStub(object):
 
 
 class SuggestionsServiceServicer(object):
-    """
-    service HelloService {
-    rpc SayHello (HelloRequest) returns (HelloResponse);
-    }
-
-    message HelloRequest {
-    string name = 1;
-    }
-
-    message HelloResponse {
-    string greeting = 1;
-    }
-
-    """
+    """Missing associated documentation comment in .proto file."""
 
     def SuggestBooks(self, request, context):
         """Missing associated documentation comment in .proto file."""
@@ -93,20 +67,7 @@ def add_SuggestionsServiceServicer_to_server(servicer, server):
 
  # This class is part of an EXPERIMENTAL API.
 class SuggestionsService(object):
-    """
-    service HelloService {
-    rpc SayHello (HelloRequest) returns (HelloResponse);
-    }
-
-    message HelloRequest {
-    string name = 1;
-    }
-
-    message HelloResponse {
-    string greeting = 1;
-    }
-
-    """
+    """Missing associated documentation comment in .proto file."""
 
     @staticmethod
     def SuggestBooks(request,
@@ -125,6 +86,78 @@ class SuggestionsService(object):
             '/suggestions.SuggestionsService/SuggestBooks',
             suggestions__pb2.SuggestionRequest.SerializeToString,
             suggestions__pb2.SuggestionResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+
+class HelloServiceStub(object):
+    """Missing associated documentation comment in .proto file."""
+
+    def __init__(self, channel):
+        """Constructor.
+
+        Args:
+            channel: A grpc.Channel.
+        """
+        self.SayHello = channel.unary_unary(
+                '/suggestions.HelloService/SayHello',
+                request_serializer=suggestions__pb2.HelloRequest.SerializeToString,
+                response_deserializer=suggestions__pb2.HelloResponse.FromString,
+                _registered_method=True)
+
+
+class HelloServiceServicer(object):
+    """Missing associated documentation comment in .proto file."""
+
+    def SayHello(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+
+def add_HelloServiceServicer_to_server(servicer, server):
+    rpc_method_handlers = {
+            'SayHello': grpc.unary_unary_rpc_method_handler(
+                    servicer.SayHello,
+                    request_deserializer=suggestions__pb2.HelloRequest.FromString,
+                    response_serializer=suggestions__pb2.HelloResponse.SerializeToString,
+            ),
+    }
+    generic_handler = grpc.method_handlers_generic_handler(
+            'suggestions.HelloService', rpc_method_handlers)
+    server.add_generic_rpc_handlers((generic_handler,))
+    server.add_registered_method_handlers('suggestions.HelloService', rpc_method_handlers)
+
+
+ # This class is part of an EXPERIMENTAL API.
+class HelloService(object):
+    """Missing associated documentation comment in .proto file."""
+
+    @staticmethod
+    def SayHello(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/suggestions.HelloService/SayHello',
+            suggestions__pb2.HelloRequest.SerializeToString,
+            suggestions__pb2.HelloResponse.FromString,
             options,
             channel_credentials,
             insecure,

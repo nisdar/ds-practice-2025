@@ -2,21 +2,6 @@ syntax = "proto3";
 
 package suggestions;
 
-/*
-service HelloService {
-    rpc SayHello (HelloRequest) returns (HelloResponse);
-}
-
-message HelloRequest {
-    string name = 1;
-}
-
-message HelloResponse {
-    string greeting = 1;
-}
-*/
-
-
 service SuggestionsService {
     rpc SuggestBooks (SuggestionRequest) returns (SuggestionResponse);
 }
@@ -34,4 +19,17 @@ message Book {
 
 message SuggestionResponse {
     repeated Book books = 1;
+}
+
+
+service HelloService {
+    rpc SayHello (HelloRequest) returns (HelloResponse);
+}
+
+message HelloRequest {
+    string name = 1;
+}
+
+message HelloResponse {
+    string greeting = 1;
 }
