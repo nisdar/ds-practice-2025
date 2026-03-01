@@ -1,6 +1,11 @@
 import sys
 import os
 
+#Set up logging
+import logging
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger("Orchestrator")
+
 # This set of lines are needed to import the gRPC stubs.
 # The path of the stubs is relative to the current file, or absolute inside the container.
 # Change these lines only if strictly needed.
@@ -23,23 +28,16 @@ import suggestions_pb2_grpc as suggestions_grpc
 import grpc
 
 def greet(name='admin'):
-    # Establish a connection with the fraud-detection gRPC service.
+    # Testing the services
     with grpc.insecure_channel('fraud_detection:50051') as channel:
-        # Create a stub object.
         fraud_stub = fraud_detection_grpc.HelloServiceStub(channel)
-        # Call the service through the stub object.
         fraud_response = fraud_stub.SayHello(fraud_detection.HelloRequest(name=name))
     with grpc.insecure_channel('transaction_verification:50052') as channel:
-        # Create a stub object.
         transaction_stub = transaction_verification_grpc.HelloServiceStub(channel)
-        # Call the service through the stub object.
         transaction_response = transaction_stub.SayHello(transaction_verification.HelloRequest(name=name))
     with grpc.insecure_channel('suggestions:50053') as channel:
-        # Create a stub object.
         suggestions_stub = suggestions_grpc.HelloServiceStub(channel)
-        # Call the service through the stub object.
         suggestions_response = suggestions_stub.SayHello(suggestions.HelloRequest(name=name))
-    # TODO add transaction_response.greeting and suggestions_response.greeting
     return f"Fraud_detection: {fraud_response.greeting} Transaction_verification: {transaction_response.greeting} Suggestions: {suggestions_response.greeting}"
 
 def call_fraud_detection(card_number, order_amount):
@@ -94,6 +92,7 @@ def call_transaction_verification(items, user, card, comment, billing_address, s
         termsAccepted=terms_accepted
     )
 
+    # Establish a connection with the transaction verification gRPC service.
     with grpc.insecure_channel('transaction_verification:50052') as channel:
         # Create a stub object.
         stub = transaction_verification_grpc.TransactionVerificationServiceStub(channel)
@@ -103,7 +102,7 @@ def call_transaction_verification(items, user, card, comment, billing_address, s
     return response# + " " + response.comment
 
 def call_suggestions(card_number, order_amount):
-    # Establish a connection with the fraud-detection gRPC service.
+    # Establish a connection with the suggestions gRPC service.
     with grpc.insecure_channel('suggestions:50053') as channel:
         # Create a stub object.
         stub = suggestions_grpc.SuggestionsServiceStub(channel)
@@ -126,7 +125,7 @@ def call_suggestions(card_number, order_amount):
 # Threading! with ThreadPoolExecutor
 from concurrent.futures import ThreadPoolExecutor
 executor = ThreadPoolExecutor(max_workers=5)
-## asynchronously calling fraud_detection
+## asynchronously calling the services
 def async_fraud_detection(card_number, order_amount):
     return executor.submit(call_fraud_detection, card_number, order_amount)
 def async_transaction_verification(items, user, card, comment, billing_address, shipping_method, gift_wrapping, terms_accepted):
@@ -134,10 +133,7 @@ def async_transaction_verification(items, user, card, comment, billing_address, 
 def async_suggestions(card_number, order_amount):
     return executor.submit(call_suggestions, card_number, order_amount)
 
-# Import Flask.
-# Flask is a web framework for Python.
-# It allows you to build a web application quickly.
-# For more information, see https://flask.palletsprojects.com/en/latest/
+
 from flask import Flask, request
 from flask_cors import CORS
 import json
@@ -148,15 +144,13 @@ app = Flask(__name__)
 CORS(app, resources={r'/*': {'origins': '*'}})
 
 # Define a GET endpoint.
-
 @app.route('/', methods=['GET'])
 def index():
     """
     #Responds with 'Hello, [name]' when a GET request is made to '/' endpoint.
     """
-    # Test the fraud-detection gRPC service.
+    # Test the gRPC services.
     response = greet(name='admin;')
-    # Return the response.
     return response
 
 
@@ -165,10 +159,12 @@ def checkout():
     """
     Responds with a JSON object containing the order ID, status, and suggested books.
     """
+    logger.info("Request received")
+
     # Get request object data to json
     request_data = json.loads(request.data)
-    # Print request object data
     items = request_data.get('items')
+
     ### TODO currently only used for FRAUD, not transaction verify
     amount = sum([item['quantity'] for item in items])
     user = request_data.get('user')
@@ -179,28 +175,30 @@ def checkout():
     gift_wrapping = request_data.get('giftWrapping')
     terms_accepted = request_data.get('termsAccepted')
 
-    print("Request Data:", request_data)
+    logger.debug(f"Request Data: {request_data}")
     
+    # Create threads for the connections
+    logger.info(f"Creating threads")
     transaction_verification_future = async_transaction_verification(items, user, card, comment, billing_address, shipping_method, gift_wrapping, terms_accepted)
-    transaction_verification_response = transaction_verification_future.result()
-
-    if transaction_verification_response.success:
-        status = "Order Approved"
-    else:
-        status = "Order Rejected"
-    print(f"Transaction verification: {status}")
-
     fraud_detection_future = async_fraud_detection(card['number'], amount)
+    suggestions_future = async_suggestions('123', 1)
+
+    # Get the results from fraud detection and transaction verification
+    transaction_verification_response = transaction_verification_future.result()
     fraud_detection_response = fraud_detection_future.result()
 
-    print(f"Fraud: {fraud_detection_response}")
-    #status = "Order Approved"
-    #if fraud:
-    #    status = "Order Rejected"
+    logger.info(f"Transaction verification response: {transaction_verification_response}")
+    logger.info(f"Fraud detection response: {fraud_detection_response}")
 
-    suggestions_future = async_suggestions('123', 1)
+    status = "Order Approved"
+    if not transaction_verification_response.success or fraud_detection_response:
+        status = "Order Rejected"
+    
+    logger.info(f"Order status: {status}")
+    
+    # Get result from suggestions
     suggestions_response = suggestions_future.result()
-    print(f"Suggestions ID-s: {[item['id'] for item in suggestions_response]}")
+    logger.info(f"Suggestion ID-s: {[item['id'] for item in suggestions_response]}")
 
     # Dummy response following the provided YAML specification for the bookstore
     order_status_response = {
@@ -208,6 +206,8 @@ def checkout():
         'status': status,
         'suggestedBooks': suggestions_response
     }
+
+    logger.debug(f"Response Data: {order_status_response}")
 
     return order_status_response
 

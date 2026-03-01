@@ -2,6 +2,11 @@ import sys
 import os
 import re
 
+#Set up logging
+import logging
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger("Transaction verification")
+
 # This set of lines are needed to import the gRPC stubs.
 # The path of the stubs is relative to the current file, or absolute inside the container.
 # Change these lines only if strictly needed.
@@ -15,21 +20,14 @@ import grpc
 from concurrent import futures
 
 
-# Create a class to define the server functions, derived from
-# fraud_detection_pb2_grpc.HelloServiceServicer
+# Create classes to define the server functions
 class HelloService(transaction_verification_grpc.HelloServiceServicer):
-    # Create an RPC function to say hello
     def SayHello(self, request, context):
-        # Create a HelloResponse object
         response = transaction_verification.HelloResponse()
-        # Set the greeting field of the response object
         response.greeting = "Hello, " + request.name
-        # Print the greeting message
-        print(response.greeting)
-        # Return the response object
+        logger.debug(response.greeting)
         return response
 
-# Create a class to define the server functions
 class TransactionVerificationService(transaction_verification_grpc.TransactionVerificationServiceServicer):
     def VerifyTransaction(self, request, context):
         # Nested methods for validating various fields
@@ -75,7 +73,7 @@ class TransactionVerificationService(transaction_verification_grpc.TransactionVe
         def validate_shipping_method(method):
             return method in ["Standard", "Express", "Next-Day"]
         
-        print(f"Checking transaction for card {request.creditCard.number} and user {request.user.name}")
+        logger.info(f"Checking transaction for card {request.creditCard.number} and user {request.user.name}")
 
         # items
         if not all(validate_item(item) for item in request.items):
@@ -112,7 +110,7 @@ def serve():
     server.add_insecure_port("[::]:" + port)
     # Start the server
     server.start()
-    print("Server started. Listening on port 50052.")
+    logger.info("Server started. Listening on port 50052.")
     # Keep thread alive
     server.wait_for_termination()
 

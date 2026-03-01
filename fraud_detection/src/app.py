@@ -1,6 +1,11 @@
 import sys
 import os
 
+#Set up logging
+import logging
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger("Fraud detection")
+
 # This set of lines are needed to import the gRPC stubs.
 # The path of the stubs is relative to the current file, or absolute inside the container.
 # Change these lines only if strictly needed.
@@ -23,8 +28,8 @@ class HelloService(fraud_detection_grpc.HelloServiceServicer):
         response = fraud_detection.HelloResponse()
         # Set the greeting field of the response object
         response.greeting = "Hello, " + request.name
-        # Print the greeting message
-        print(response.greeting)
+        # Log the greeting message
+        logger.debug(response.greeting)
         # Return the response object
         return response
 
@@ -33,12 +38,12 @@ class FraudDetectionService(fraud_detection_grpc.FraudDetectionServiceServicer):
         card_number = request.card_number
         order_amount = request.order_amount
 
-        print(f"Checking fraud for card: {card_number} and amount {order_amount}")
+        logger.info(f"Checking fraud for card: {card_number} and amount {order_amount}")
         
         is_fraud = False
         if order_amount > 1000 or card_number.startswith("999"):
             is_fraud = True
-            print("Fraud detected!")
+            logger.info("Fraud detected!")
 
         return fraud_detection.FraudResponse(is_fraud=is_fraud)
 
@@ -52,7 +57,7 @@ def serve():
     server.add_insecure_port("[::]:" + port)
     # Start the server
     server.start()
-    print("Server started. Listening on port 50051.")
+    logger.info("Server started. Listening on port 50051.")
     # Keep thread alive
     server.wait_for_termination()
 
