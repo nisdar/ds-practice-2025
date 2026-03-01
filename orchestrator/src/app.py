@@ -181,25 +181,32 @@ def checkout():
 
     print("Request Data:", request_data)
     
-    transaction_verification_response = async_transaction_verification(items, user, card, comment, billing_address, shipping_method, gift_wrapping, terms_accepted)
-    
+    transaction_verification_future = async_transaction_verification(items, user, card, comment, billing_address, shipping_method, gift_wrapping, terms_accepted)
+    transaction_verification_response = transaction_verification_future.result()
+
     if transaction_verification_response.success:
         status = "Order Approved"
     else:
         status = "Order Rejected"
     print(f"Transaction verification: {status}")
 
-    fraud = async_fraud_detection(card['number'], amount)
-    print(f"Fraud: {fraud}")
+    fraud_detection_future = async_fraud_detection(card['number'], amount)
+    fraud_detection_response = fraud_detection_future.result()
+
+    print(f"Fraud: {fraud_detection_response}")
     #status = "Order Approved"
     #if fraud:
     #    status = "Order Rejected"
+
+    suggestions_future = async_suggestions('123', 1)
+    suggestions_response = suggestions_future.result()
+    print(f"Suggestions ID-s: {[item['id'] for item in suggestions_response]}")
 
     # Dummy response following the provided YAML specification for the bookstore
     order_status_response = {
         'orderId': '12345',
         'status': status,
-        'suggestedBooks': async_suggestions('123', 1)
+        'suggestedBooks': suggestions_response
     }
 
     return order_status_response
