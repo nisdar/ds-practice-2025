@@ -34,7 +34,26 @@ The method `call_fraud_detection(string, float)` takes the card number and order
 
 # `transaction_verification` microservice
 
-For checkpoint #1, this is limited to some very simple deterministic logic. 
+The `transaction_verification` microservice is concerned with verifying all the information sent by the user. This means checking the validity of the following fields:
+- `Items` - do items exist, are quantities valid?
+- `Name` - do we have at least two names separated with a space, only alphabetic (English only) characters?
+- `Contact` - arguably, this could be both a phone number or an email. We will assume that `contact` contains email information as this is what is provided in the example.
+- `Credit Card Number` - we will use real credit card logic for this (TODO).
+- `Expiration Date` - we will check whether the date has not yet passed.
+- `CVV` - three-number check; we will check, whether there is some logic behind this number.
+- `Comment` - mayhaps limit to alphanumeric characters with a few additions; mayhaps not.
+- `Billing address` fields will be checked for standard formatting.
+    - `Street address`
+    - `City/Town`
+    - `State`
+    - `Postal Code`
+    - `Country`
+- `Shipping method` - can only be "Standard", "Express" or "Next-day".
+- `Gift Wrapping` - can only be represented by a boolean.
+- `Accept T&C` - must be checked; can only be represented by a boolean.
+
+
+
 
 
 

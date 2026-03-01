@@ -8,11 +8,18 @@ service TransactionVerificationService {
 
 message VerificationRequest {
     repeated ItemData items = 1;
-    CreditCardData creditCard = 2;
+    User user = 2;
+    CreditCard creditCard = 3;
+    Comment comment = 4;
+    BillingAddress billingAddress = 5;
+    string shippingMethod = 6;
+    bool giftWrapping = 7;
+    bool termsAccepted = 8;
 }
 
 message VerificationResponse {
     bool success = 1;
+    optional string comment = 2;
 }
 
 message ItemData {
@@ -20,8 +27,39 @@ message ItemData {
     string quantity = 2;
 }
 
-message CreditCardData {
+message User {
+    string name = 1;
+    string contact = 2;
+}
+
+message CreditCard {
     string number = 1;
     string expirationDate = 2;
     string cvv = 3;
+}
+
+message Comment {
+    string comment = 1;
+}
+
+message BillingAddress {
+    string street = 1;
+    string city = 2;
+    string state = 3;
+    string zip = 4;
+    string country = 5;
+}
+
+
+
+service HelloService {
+    rpc SayHello (HelloRequest) returns (HelloResponse);
+}
+
+message HelloRequest {
+    string name = 1;
+}
+
+message HelloResponse {
+    string greeting = 1;
 }
