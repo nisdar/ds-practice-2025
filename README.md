@@ -44,3 +44,10 @@ frontend service:
 - It's a simple static HTML page, you can open `frontend/src/index.html` in your browser.
 
 And then run each service individually.
+
+### Diagrams
+
+#### System diagram
+![System diagram](https://github.com/nisdar/ds-practice-2025/blob/master/diagrams/System_diagram.drawio.svg)
+#### Architecture diagram
+![App Platorm](https://github.com/nisdar/ds-practice-2025/blob/master/diagrams/Architecture_diagram.drawio.svg)
