@@ -34,6 +34,14 @@ class HelloService(fraud_detection_grpc.HelloServiceServicer):
         return response
 
 class FraudDetectionService(fraud_detection_grpc.FraudDetectionServiceServicer):
+    def __init__(self, svc_idx=0, total_svcs=3):
+        self.svc_idx = svc_idx
+        self.total_svcs = total_svcs
+        self.orders = {}
+
+    def init_order(self, order_id, data):
+        self.orders[order_id] = {"data" : data, "vc": [0] * self.total_svcs}
+
     def CheckFraud(self, request, context):
         card_number = request.card_number
         order_amount = request.order_amount

@@ -1,5 +1,6 @@
 import sys
 import os
+import uuid
 
 #Set up logging
 import logging
@@ -159,7 +160,9 @@ def checkout():
     """
     Responds with a JSON object containing the order ID, status, and suggested books.
     """
-    logger.info("Request received")
+    order_id = str(uuid.uuid4())
+
+    logger.info(f"Request ID {order_id} received")
 
     # Get request object data to json
     request_data = json.loads(request.data)
@@ -202,7 +205,7 @@ def checkout():
 
     # Dummy response following the provided YAML specification for the bookstore
     order_status_response = {
-        'orderId': '12345',
+        'orderId': order_id,
         'status': status,
         'suggestedBooks': suggestions_response
     }

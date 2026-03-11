@@ -31,6 +31,14 @@ class HelloService(suggestions_grpc.HelloServiceServicer):
 
 
 class SuggestionsService(suggestions_grpc.SuggestionsServiceServicer):
+    def __init__(self, svc_idx=0, total_svcs=3):
+        self.svc_idx = svc_idx
+        self.total_svcs = total_svcs
+        self.orders = {}
+
+    def init_order(self, order_id, data):
+        self.orders[order_id] = {"data" : data, "vc": [0] * self.total_svcs}
+
     def SuggestBooks(self, request, context):
         card_number = request.card_number
         order_amount = request.order_amount

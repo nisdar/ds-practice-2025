@@ -29,6 +29,14 @@ class HelloService(transaction_verification_grpc.HelloServiceServicer):
         return response
 
 class TransactionVerificationService(transaction_verification_grpc.TransactionVerificationServiceServicer):
+    def __init__(self, svc_idx=0, total_svcs=3):
+        self.svc_idx = svc_idx
+        self.total_svcs = total_svcs
+        self.orders = {}
+
+    def init_order(self, order_id, data):
+        self.orders[order_id] = {"data" : data, "vc": [0] * self.total_svcs}
+
     def VerifyTransaction(self, request, context):
         # Nested methods for validating various fields
         def validate_item(item):
