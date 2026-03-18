@@ -33,6 +33,22 @@ class HelloService(fraud_detection_grpc.HelloServiceServicer):
         # Return the response object
         return response
 
+
+
+class UserDataChecker():
+    ...
+class CreditCardDataChecker():
+    ...
+
+from concurrent.futures import ThreadPoolExecutor
+executor = ThreadPoolExecutor(max_workers=4)
+## asynchronously calling the services
+def async_check_user_data():
+    return executor.submit(...)
+def async_check_credit_card_data():
+    return executor.submit(...)
+
+
 class FraudDetectionService(fraud_detection_grpc.FraudDetectionServiceServicer):
     def __init__(self, svc_idx=0, total_svcs=3):
         self.svc_idx = svc_idx

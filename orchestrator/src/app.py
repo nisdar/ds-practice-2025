@@ -125,7 +125,7 @@ def call_suggestions(card_number, order_amount):
 
 # Threading! with ThreadPoolExecutor
 from concurrent.futures import ThreadPoolExecutor
-executor = ThreadPoolExecutor(max_workers=5)
+executor = ThreadPoolExecutor(max_workers=6)
 ## asynchronously calling the services
 def async_fraud_detection(card_number, order_amount):
     return executor.submit(call_fraud_detection, card_number, order_amount)

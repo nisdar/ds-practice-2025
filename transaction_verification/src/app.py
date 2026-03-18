@@ -28,6 +28,38 @@ class HelloService(transaction_verification_grpc.HelloServiceServicer):
         logger.debug(response.greeting)
         return response
 
+
+class ItemDataChecker():
+    ...
+class UserChecker():
+    ...
+class CommentChecker():
+    ...
+class BillingAddressChecker():
+    ...
+class CreditCardChecker():
+    ...
+class ShippingMethodChecker():
+    ...
+
+from concurrent.futures import ThreadPoolExecutor
+executor = ThreadPoolExecutor(max_workers=12)
+## asynchronously calling the services
+def async_check_item_data():
+    return executor.submit(...)
+def async_check_user():
+    return executor.submit(...)
+def async_check_comment():
+    return executor.submit(...)
+def async_check_billing_address():
+    return executor.submit(...)
+def async_check_credit_card():
+    return executor.submit(...)
+def async_check_shipping_method():
+    return executor.submit(...)
+
+
+
 class TransactionVerificationService(transaction_verification_grpc.TransactionVerificationServiceServicer):
     def __init__(self, svc_idx=0, total_svcs=3):
         self.svc_idx = svc_idx

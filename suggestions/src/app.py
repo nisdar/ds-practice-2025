@@ -29,6 +29,11 @@ class HelloService(suggestions_grpc.HelloServiceServicer):
         logger.debug(response.greeting)
         return response
 
+from concurrent.futures import ThreadPoolExecutor
+executor = ThreadPoolExecutor(max_workers=2)
+## asynchronously calling the services
+def async_suggest():
+    return executor.submit(...)
 
 class SuggestionsService(suggestions_grpc.SuggestionsServiceServicer):
     def __init__(self, svc_idx=0, total_svcs=3):
