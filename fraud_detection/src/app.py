@@ -44,6 +44,11 @@ def call_fraud_detection(card_number, order_amount):
         response = stub.CheckFraud(request_obj)
     return response.is_fraud
 
+def call_user_data_check():
+    ...
+def call_credit_card_data_check():
+    ...
+
 class UserDataChecker():
     ...
 class CreditCardDataChecker():
