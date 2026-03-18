@@ -34,6 +34,15 @@ class HelloService(fraud_detection_grpc.HelloServiceServicer):
         return response
 
 
+def call_fraud_detection(card_number, order_amount):
+    # Establish a connection with the fraud-detection gRPC service.
+    with grpc.insecure_channel('fraud_detection:50051') as channel:
+        # Create a stub object.
+        stub = fraud_detection_grpc.FraudDetectionServiceStub(channel)
+        request_obj = fraud_detection.FraudRequest(card_number=card_number, order_amount=order_amount)
+        # Call the service through the stub object.
+        response = stub.CheckFraud(request_obj)
+    return response.is_fraud
 
 class UserDataChecker():
     ...

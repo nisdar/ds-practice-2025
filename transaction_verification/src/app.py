@@ -29,6 +29,59 @@ class HelloService(transaction_verification_grpc.HelloServiceServicer):
         return response
 
 
+
+def call_transaction_verification(items, user, card, comment, billing_address, shipping_method, gift_wrapping, terms_accepted):
+    ### due to dictionary usage, transformed to PB2 dictionaries with help from Mistral Le Chat
+    # Convert items
+    pb_items = []
+    for item in items:
+        pb_item = transaction_verification.ItemData(name=item['name'], quantity=str(item['quantity']))
+        pb_items.append(pb_item)
+
+    # Convert user
+    pb_user = transaction_verification.User(name=user['name'], contact=user['contact'])
+
+    # Convert credit card
+    pb_card = transaction_verification.CreditCard(
+        number=card['number'],
+        expirationDate=card['expirationDate'],
+        cvv=card['cvv']
+    )
+
+    # Convert comment
+    pb_comment = transaction_verification.Comment(comment=comment)
+
+    # Convert billing address
+    pb_billing_address = transaction_verification.BillingAddress(
+        street=billing_address['street'],
+        city=billing_address['city'],
+        state=billing_address['state'],
+        zip=billing_address['zip'],
+        country=billing_address['country']
+    )
+
+    # Build the request
+    request_obj = transaction_verification.VerificationRequest(
+        items=pb_items,
+        user=pb_user,
+        creditCard=pb_card,
+        comment=pb_comment,
+        billingAddress=pb_billing_address,
+        shippingMethod=shipping_method,
+        giftWrapping=gift_wrapping,
+        termsAccepted=terms_accepted
+    )
+
+    # Establish a connection with the transaction verification gRPC service.
+    with grpc.insecure_channel('transaction_verification:50052') as channel:
+        # Create a stub object.
+        stub = transaction_verification_grpc.TransactionVerificationServiceStub(channel)
+        # Call the service through the stub object.
+        response = stub.VerifyTransaction(request_obj)
+    # TODO response.comment might have not-great formatting
+    return response# + " " + response.comment
+
+
 class ItemDataChecker():
     ...
 class UserChecker():
@@ -57,7 +110,6 @@ def async_check_credit_card():
     return executor.submit(...)
 def async_check_shipping_method():
     return executor.submit(...)
-
 
 
 class TransactionVerificationService(transaction_verification_grpc.TransactionVerificationServiceServicer):

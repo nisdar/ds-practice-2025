@@ -182,6 +182,7 @@ def checkout():
     
     # Create threads for the connections
     logger.info(f"Creating threads")
+    # TODO remove the variables here, no need to retain the futures
     transaction_verification_future = async_transaction_verification(items, user, card, comment, billing_address, shipping_method, gift_wrapping, terms_accepted)
     fraud_detection_future = async_fraud_detection(card['number'], amount)
     suggestions_future = async_suggestions('123', 1)
