@@ -72,6 +72,7 @@ class SuggestionsService(suggestions_grpc.SuggestionsServiceServicer):
 
         logger.info(f"Generating suggestions for {card_number}, amount {order_amount}")
 
+        # TODO this could be split into an asynchronous function call.
         books = [
             {"id": "1", "author": "Author 1", "title": "The Best Book"},
             {"id": "2", "author": "Author 2", "title": "The Best Book 2"},
