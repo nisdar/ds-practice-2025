@@ -160,61 +160,58 @@ def checkout():
     """
     Responds with a JSON object containing the order ID, status, and suggested books.
     """
-    order_id = str(uuid.uuid4())
 
+    order_id = str(uuid.uuid4())
     logger.info(f"Request ID {order_id} received")
 
-    # Get request object data to json
     request_data = json.loads(request.data)
-    items = request_data.get('items')
 
-    ### TODO currently only used for FRAUD, not transaction verify
-    amount = sum([item['quantity'] for item in items])
-    user = request_data.get('user')
-    card = request_data.get('creditCard')
-    comment = request_data.get('userComment')
-    billing_address = request_data.get('billingAddress')
-    shipping_method = request_data.get('shippingMethod')
-    gift_wrapping = request_data.get('giftWrapping')
-    terms_accepted = request_data.get('termsAccepted')
+    items = request_data.get("items")
+    amount = sum(item["quantity"] for item in items)
+
+    user = request_data.get("user")
+    card = request_data.get("creditCard")
+    comment = request_data.get("userComment")
+    billing_address = request_data.get("billingAddress")
+    shipping_method = request_data.get("shippingMethod")
+    gift_wrapping = request_data.get("giftWrapping")
+    terms_accepted = request_data.get("termsAccepted")
 
     logger.debug(f"Request Data: {request_data}")
-    
-    # Create threads for the connections
-    logger.info(f"Creating threads")
-    # TODO remove the variables here, no need to retain the futures
-    transaction_verification_future = async_transaction_verification(items, user, card, comment, billing_address, shipping_method, gift_wrapping, terms_accepted)
-    fraud_detection_future = async_fraud_detection(card['number'], amount)
-    suggestions_future = async_suggestions('123', 1)
 
-    # Get the results from fraud detection and transaction verification
-    transaction_verification_response = transaction_verification_future.result()
-    fraud_detection_response = fraud_detection_future.result()
+    # Start async operations
+    logger.info("Creating threads...")
 
-    logger.info(f"Transaction verification response: {transaction_verification_response}")
-    logger.info(f"Fraud detection response: {fraud_detection_response}")
+    trx_future = async_transaction_verification(
+        items, user, card, comment,
+        billing_address, shipping_method,
+        gift_wrapping, terms_accepted
+    )
+
+    fraud_future = async_fraud_detection(card["number"], amount)
+    suggestions_future = async_suggestions("123", 1)
+
+    trx_response = trx_future.result()
+    fraud_response = fraud_future.result()
+
+    logger.info(f"Transaction verification: {trx_response}")
+    logger.info(f"Fraud detection: {fraud_response}")
 
     status = "Order Approved"
-    if not transaction_verification_response.success or fraud_detection_response:
+    if not trx_response.success or fraud_response:
         status = "Order Rejected"
-    
-    logger.info(f"Order status: {status}")
-    
-    # Get result from suggestions
-    suggestions_response = suggestions_future.result()
-    logger.info(f"Suggestion ID-s: {[item['id'] for item in suggestions_response]}")
 
-    # Dummy response following the provided YAML specification for the bookstore
-    order_status_response = {
-        'orderId': order_id,
-        'status': status,
-        'suggestedBooks': suggestions_response
+    suggestions_response = suggestions_future.result()
+    logger.info(f"Suggested book IDs: {[s['id'] for s in suggestions_response]}")
+
+    result = {
+        "orderId": order_id,
+        "status": status,
+        "suggestedBooks": suggestions_response
     }
 
-    logger.debug(f"Response Data: {order_status_response}")
-
-    return order_status_response
-
+    logger.debug(f"Response Data: {result}")
+    return result
 
 if __name__ == '__main__':
     # Run the app in debug mode to enable hot reloading.
