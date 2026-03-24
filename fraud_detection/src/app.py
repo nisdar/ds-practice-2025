@@ -1,5 +1,6 @@
 import sys
 import os
+import re
 
 #Set up logging
 import logging
@@ -17,6 +18,7 @@ import fraud_detection_pb2_grpc as fraud_detection_grpc
 
 import grpc
 from concurrent import futures
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
 # Create a class to define the server functions, derived from
@@ -34,33 +36,53 @@ class HelloService(fraud_detection_grpc.HelloServiceServicer):
         return response
 
 
-def call_fraud_detection(card_number, order_amount):
-    # Establish a connection with the fraud-detection gRPC service.
-    with grpc.insecure_channel('fraud_detection:50051') as channel:
-        # Create a stub object.
-        stub = fraud_detection_grpc.FraudDetectionServiceStub(channel)
-        request_obj = fraud_detection.FraudRequest(card_number=card_number, order_amount=order_amount)
-        # Call the service through the stub object.
-        response = stub.CheckFraud(request_obj)
-    return response.is_fraud
+class UserDataChecker:
+    def __call__(self, card_number):
+        """
+        Fake rule:
+        - If card starts with "999" → suspicious user profile.
+        """
+        if card_number.startswith("999"):
+            return False, "Suspicious card prefix (999*)"
+        return True, None
 
-def call_user_data_check():
-    ...
-def call_credit_card_data_check():
-    ...
 
-class UserDataChecker():
-    ...
-class CreditCardDataChecker():
-    ...
+class CreditCardDataChecker:
+    def __call__(self, card_number):
+        """
+        Simple sanity check:
+        - Must be digits
+        - Length must be 16
+        """
+        if not re.fullmatch(r'^\d{16}$', card_number):
+            return False, "Invalid credit-card format"
+        return True, None
+
+
+class OrderAmountChecker:
+    def __call__(self, amount):
+        """
+        Business rule:
+        - > 1000 is considered fraud
+        """
+        if amount > 1000:
+            return False, "Order amount exceeds safe threshold"
+        return True, None
+
 
 from concurrent.futures import ThreadPoolExecutor
-executor = ThreadPoolExecutor(max_workers=4)
+executor = ThreadPoolExecutor(max_workers=6)
 ## asynchronously calling the services
-def async_check_user_data():
-    return executor.submit(...)
-def async_check_credit_card_data():
-    return executor.submit(...)
+
+def async_check_user_data(card_number):
+    return executor.submit(UserDataChecker(), card_number)
+
+def async_check_credit_card_data(card_number):
+    return executor.submit(CreditCardDataChecker(), card_number)
+
+def async_check_order_amount(amount):
+    return executor.submit(OrderAmountChecker(), amount)
+
 
 
 class FraudDetectionService(fraud_detection_grpc.FraudDetectionServiceServicer):
@@ -70,20 +92,38 @@ class FraudDetectionService(fraud_detection_grpc.FraudDetectionServiceServicer):
         self.orders = {}
 
     def init_order(self, order_id, data):
-        self.orders[order_id] = {"data" : data, "vc": [0] * self.total_svcs}
+        self.orders[order_id] = {"data": data, "vc": [0] * self.total_svcs}
 
     def CheckFraud(self, request, context):
         card_number = request.card_number
         order_amount = request.order_amount
 
-        logger.info(f"Checking fraud for card: {card_number} and amount {order_amount}")
-        
-        is_fraud = False
-        if order_amount > 1000 or card_number.startswith("999"):
-            is_fraud = True
-            logger.info("Fraud detected!")
+        logger.info(f"Checking fraud for card {card_number} and amount {order_amount}")
 
-        return fraud_detection.FraudResponse(is_fraud=is_fraud)
+        # Launch concurrent checks
+        tasks = {
+            async_check_user_data(card_number): "User-data check failed",
+            async_check_credit_card_data(card_number): "Credit-card check failed",
+            async_check_order_amount(order_amount): "Order-amount check failed"
+        }
+
+        fraud_detected = False
+        failure_reason = None
+
+        # Aggregate results
+        for future in as_completed(tasks):
+            ok, error = future.result()
+            if not ok:
+                fraud_detected = True
+                failure_reason = error
+                break
+
+        if fraud_detected:
+            logger.info(f"Fraud detected: {failure_reason}")
+            return fraud_detection.FraudResponse(is_fraud=True)
+
+        return fraud_detection.FraudResponse(is_fraud=False)
+
 
 def serve():
     # Create a gRPC server
