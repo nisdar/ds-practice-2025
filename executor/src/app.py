@@ -61,18 +61,18 @@ class ExecutorService(executor_grpc.ExecutorServiceServicer):
 # TODO this probably replaces serve() ? maybe
 def launch_executor(executor_id, known_ids):
     # TODO set up gRPC, connect to order queue
-    # queue_stub = ...
-    svc = ExecutorService(executor_id, known_ids, queue_stub=None)
-    svc.StartLeaderElection()
-    svc.run()
+    with grpc.insecure_channel('order_queue:50054') as channel:
+        queue_stub = order_queue_grpc.OrderQueueServiceStub(channel)
+        queue_response = queue_stub.SayHello(order_queue.GetQueue())
+        svc = ExecutorService(0, [], queue_stub)
+        svc.StartLeaderElection()
+        svc.run()
 
 
 def serve():
     # Create a gRPC server
     server = grpc.server(futures.ThreadPoolExecutor())
     executor_grpc.add_HelloServiceServicer_to_server(HelloService(), server)
-    # TODO fill with real values
-    executor_grpc.add_ExecutorServiceServicer_to_server(ExecutorService(0, [], order_queue_grpc), server)
     # Listen on port 50055
     port = "50055"
     server.add_insecure_port("[::]:" + port)

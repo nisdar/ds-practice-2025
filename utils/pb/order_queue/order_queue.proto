@@ -3,10 +3,13 @@ syntax = "proto3";
 package order_queue;
 
 service OrderQueueService {
+    rpc GetQueue (QueueGetRequest) returns (QueueResponse);
     rpc Enqueue (QueueAddRequest) returns (QueueResponse);
     rpc Dequeue (QueueRemoveRequest) returns (QueueResponse);
 }
 
+message QueueGetRequest {
+}
 message QueueAddRequest {
     string addable_order = 1;
 }

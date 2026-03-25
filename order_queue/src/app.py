@@ -41,6 +41,9 @@ class OrderQueueService(order_queue_grpc.OrderQueueServiceServicer):
         self.total_svcs = total_svcs
         self.order_queue = []
 
+    def GetQueue(self, request, context):
+        return order_queue.QueueResponse(success=True, order_queue=self.order_queue)
+
     # Returns (bool, string[])
     def Enqueue(self, request, context):
         # TODO: lock queue, insert request.orderId
