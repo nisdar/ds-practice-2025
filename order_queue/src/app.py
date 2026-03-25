@@ -1,6 +1,7 @@
 import sys
 import os
 import re
+import threading
 
 #Set up logging
 import logging
@@ -35,27 +36,87 @@ class HelloService(order_queue_grpc.HelloServiceServicer):
         # Return the response object
         return response
 
+
+# This class was made with the help of Copilot from the skeleton code.
+class QueueStorage:
+    """
+    Thread‑safe queue storage.
+    """
+    def __init__(self):
+        self._queue = []
+        self._lock = threading.Lock()
+
+    def enqueue(self, order_id):
+        with self._lock:
+            self._queue.append(order_id)
+            logger.debug(f"Queue after enqueue: {self._queue}")
+            return True, list(self._queue)
+
+    def dequeue(self):
+        with self._lock:
+            if not self._queue:
+                logger.debug("Dequeue attempted but queue is empty.")
+                return True, None, []
+
+            removed = self._queue.pop(0)
+            logger.debug(f"Dequeued: {removed}, queue now: {self._queue}")
+            return True, removed, list(self._queue)
+
+    def get_queue(self):
+        with self._lock:
+            logger.debug(f"Queue read: {self._queue}")
+            return True, list(self._queue)
+
+executor = ThreadPoolExecutor(max_workers=6)
+
+def async_enqueue(queue_storage, order_id):
+    return executor.submit(queue_storage.enqueue, order_id)
+
+def async_dequeue(queue_storage):
+    return executor.submit(queue_storage.dequeue)
+
+def async_get_queue(queue_storage):
+    return executor.submit(queue_storage.get_queue)
+
+
+# This class was made with the help of Copilot from the skeleton code.
 class OrderQueueService(order_queue_grpc.OrderQueueServiceServicer):
     def __init__(self, svc_idx=0, total_svcs=3):
         self.svc_idx = svc_idx
         self.total_svcs = total_svcs
-        self.order_queue = []
+        self.queue = QueueStorage()
 
     def GetQueue(self, request, context):
-        return order_queue.QueueResponse(success=True, order_queue=self.order_queue)
+        ok, order_queue = self.queue.get_queue()
+        return order_queue.QueueResponse(
+            success=ok,
+            order_queue=order_queue
+        )
 
-    # Returns (bool, string[])
     def Enqueue(self, request, context):
-        # TODO: lock queue, insert request.orderId
-        # TODO: return success response
-        ...
-        return order_queue.QueueResponse(success=True, order_queue=self.order_queue)
-    # Returns (bool, string[])
+        order_id = request.addable_order
+        logger.info(f"Enqueue request: {order_id}")
+
+        ok, order_queue = self.queue.enqueue(order_id)
+        return order_queue.QueueResponse(
+            success=ok,
+            order_queue=order_queue
+        )
+
     def Dequeue(self, request, context):
-        ...
-        # TODO: lock queue, pop an order if available
-        # TODO: return the dequeued order on an empty result
-        return order_queue.QueueResponse(success=True, order_queue=self.order_queue)
+        logger.info("Dequeue request received")
+
+        ok, removed, order_queue = self.queue.dequeue()
+        # We don't expose the removed item directly in QueueResponse,
+        # but can log it for debugging
+        if removed:
+            logger.info(f"Dequeued order: {removed}")
+
+        return order_queue.QueueResponse(
+            success=ok,
+            order_queue=order_queue
+        )
+
 
 def serve():
     # Create a gRPC server

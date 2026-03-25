@@ -20,8 +20,6 @@ import grpc
 from concurrent import futures
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-
-# Create classes to define the server functions
 class HelloService(transaction_verification_grpc.HelloServiceServicer):
     def SayHello(self, request, context):
         response = transaction_verification.HelloResponse()
@@ -29,6 +27,9 @@ class HelloService(transaction_verification_grpc.HelloServiceServicer):
         logger.debug(response.greeting)
         return response
 
+# The following classes were created with the help of Copilot
+#   based on an existing transaction verification function,
+#   split into classes for asynchronous threading.
 class ItemDataChecker:
     def __call__(self, items):
         name_regex = r'^[a-zA-Z0-9 \-\']+$'
@@ -39,7 +40,6 @@ class ItemDataChecker:
             if not re.fullmatch(quantity_regex, item.quantity):
                 return False, "Invalid item quantity"
         return True, None
-
 
 class UserChecker:
     def __call__(self, user):
@@ -124,7 +124,7 @@ def async_check_shipping_method(method):
     return executor.submit(ShippingMethodChecker(), method)
 
 
-
+# This class was also remade with the help of Copilot to combine the refactored classes.
 class TransactionVerificationService(transaction_verification_grpc.TransactionVerificationServiceServicer):
     def __init__(self, svc_idx=0, total_svcs=3):
         self.svc_idx = svc_idx

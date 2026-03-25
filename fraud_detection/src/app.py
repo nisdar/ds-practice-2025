@@ -36,12 +36,11 @@ class HelloService(fraud_detection_grpc.HelloServiceServicer):
         return response
 
 
+# The following classes were created with the help of Copilot
+#   based on an existing fraud detection function,
+#   split into classes for asynchronous threading.
 class UserDataChecker:
     def __call__(self, card_number):
-        """
-        Fake rule:
-        - If card starts with "999" → suspicious user profile.
-        """
         if card_number.startswith("999"):
             return False, "Suspicious card prefix (999*)"
         return True, None
@@ -50,9 +49,7 @@ class UserDataChecker:
 class CreditCardDataChecker:
     def __call__(self, card_number):
         """
-        Simple sanity check:
-        - Must be digits
-        - Length must be 16
+        Must be digits, length must be 16
         """
         if not re.fullmatch(r'^\d{16}$', card_number):
             return False, "Invalid credit-card format"
@@ -61,10 +58,6 @@ class CreditCardDataChecker:
 
 class OrderAmountChecker:
     def __call__(self, amount):
-        """
-        Business rule:
-        - > 1000 is considered fraud
-        """
         if amount > 1000:
             return False, "Order amount exceeds safe threshold"
         return True, None
@@ -84,7 +77,7 @@ def async_check_order_amount(amount):
     return executor.submit(OrderAmountChecker(), amount)
 
 
-
+# This class was also remade with the help of Copilot to combine the refactored classes.
 class FraudDetectionService(fraud_detection_grpc.FraudDetectionServiceServicer):
     def __init__(self, svc_idx=0, total_svcs=3):
         self.svc_idx = svc_idx
