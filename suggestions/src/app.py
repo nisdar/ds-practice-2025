@@ -30,6 +30,33 @@ class HelloService(suggestions_grpc.HelloServiceServicer):
         return response
 
 
+def call_suggestions(card_number, order_amount):
+    # Establish a connection with the suggestions gRPC service.
+    with grpc.insecure_channel('suggestions:50053') as channel:
+        # Create a stub object.
+        stub = suggestions_grpc.SuggestionsServiceStub(channel)
+        request_obj = suggestions.SuggestionRequest(card_number=card_number, order_amount=order_amount)
+        # Call the service through the stub object.
+        response = stub.SuggestBooks(request_obj)
+
+        books_list = []
+
+        result = [
+            {
+                "id": book.id,
+                "title": book.title,
+                "author": book.author
+            }
+            for book in response.books
+        ]
+    return result
+
+from concurrent.futures import ThreadPoolExecutor
+executor = ThreadPoolExecutor(max_workers=2)
+## asynchronously calling the services
+def async_suggest():
+    return executor.submit(...)
+
 class SuggestionsService(suggestions_grpc.SuggestionsServiceServicer):
     def __init__(self, svc_idx=0, total_svcs=3):
         self.svc_idx = svc_idx
@@ -45,6 +72,7 @@ class SuggestionsService(suggestions_grpc.SuggestionsServiceServicer):
 
         logger.info(f"Generating suggestions for {card_number}, amount {order_amount}")
 
+        # TODO this could be split into an asynchronous function call.
         books = [
             {"id": "1", "author": "Author 1", "title": "The Best Book"},
             {"id": "2", "author": "Author 2", "title": "The Best Book 2"},

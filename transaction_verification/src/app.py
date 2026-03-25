@@ -18,6 +18,7 @@ import transaction_verification_pb2_grpc as transaction_verification_grpc
 
 import grpc
 from concurrent import futures
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
 # Create classes to define the server functions
@@ -28,6 +29,102 @@ class HelloService(transaction_verification_grpc.HelloServiceServicer):
         logger.debug(response.greeting)
         return response
 
+class ItemDataChecker:
+    def __call__(self, items):
+        name_regex = r'^[a-zA-Z0-9 \-\']+$'
+        quantity_regex = r'^[1-9]\d*$'
+        for item in items:
+            if not re.fullmatch(name_regex, item.name):
+                return False, "Invalid item name"
+            if not re.fullmatch(quantity_regex, item.quantity):
+                return False, "Invalid item quantity"
+        return True, None
+
+
+class UserChecker:
+    def __call__(self, user):
+        name_regex = r'^[a-zA-Z]+ [a-zA-Z]+$'
+        email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        if re.fullmatch(name_regex, user.name) is None:
+            return False, "Invalid user name"
+        if re.fullmatch(email_regex, user.contact) is None:
+            return False, "Invalid user email"
+        return True, None
+
+
+class CreditCardChecker:
+    def __call__(self, card):
+        number_regex = r'^[456]\d{15}$'
+        exp_date_regex = r'^(0[1-9]|1[0-2])\/\d{2}$'
+        cvv_regex = r'^\d{3}$'
+        if re.fullmatch(number_regex, card.number) is None:
+            return False, "Invalid credit-card number"
+        if re.fullmatch(exp_date_regex, card.expirationDate) is None:
+            return False, "Invalid expiration date"
+        if re.fullmatch(cvv_regex, card.cvv) is None:
+            return False, "Invalid CVV"
+        return True, None
+
+
+class CommentChecker:
+    def __call__(self, comment):
+        comment_regex = r'^[a-zA-Z0-9 \-\'.,!?]*$'
+        if re.fullmatch(comment_regex, comment.comment) is None:
+            return False, "Invalid comment"
+        return True, None
+
+
+class BillingAddressChecker:
+    def __call__(self, address):
+        street_regex = r'^[a-zA-Z0-9 \-,\.]+$'
+        city_regex = r'^[a-zA-Z \-]+$'
+        state_regex = r'^[a-zA-Z ]+$'
+        zip_regex = r'^\d{5}(-\d{4})?$'
+        country_regex = r'^[a-zA-Z]{2,}$'
+
+        if re.fullmatch(street_regex, address.street) is None:
+            return False, "Invalid street"
+        if re.fullmatch(city_regex, address.city) is None:
+            return False, "Invalid city"
+        if re.fullmatch(state_regex, address.state) is None:
+            return False, "Invalid state"
+        if re.fullmatch(zip_regex, address.zip) is None:
+            return False, "Invalid ZIP code"
+        if re.fullmatch(country_regex, address.country) is None:
+            return False, "Invalid country"
+        return True, None
+
+
+class ShippingMethodChecker:
+    def __call__(self, method):
+        valid = ["Standard", "Express", "Next-Day"]
+        if method not in valid:
+            return False, "Invalid shipping method"
+        return True, None
+
+
+executor = ThreadPoolExecutor(max_workers=12)
+
+def async_check_item_data(items):
+    return executor.submit(ItemDataChecker(), items)
+
+def async_check_user(user):
+    return executor.submit(UserChecker(), user)
+
+def async_check_comment(comment):
+    return executor.submit(CommentChecker(), comment)
+
+def async_check_billing_address(billing):
+    return executor.submit(BillingAddressChecker(), billing)
+
+def async_check_credit_card(card):
+    return executor.submit(CreditCardChecker(), card)
+
+def async_check_shipping_method(method):
+    return executor.submit(ShippingMethodChecker(), method)
+
+
+
 class TransactionVerificationService(transaction_verification_grpc.TransactionVerificationServiceServicer):
     def __init__(self, svc_idx=0, total_svcs=3):
         self.svc_idx = svc_idx
@@ -35,91 +132,53 @@ class TransactionVerificationService(transaction_verification_grpc.TransactionVe
         self.orders = {}
 
     def init_order(self, order_id, data):
-        self.orders[order_id] = {"data" : data, "vc": [0] * self.total_svcs}
+        self.orders[order_id] = {
+            "data": data,
+            "vc": [0] * self.total_svcs
+        }
 
     def VerifyTransaction(self, request, context):
-        # Nested methods for validating various fields
-        def validate_item(item):
-            name_regex = r'^[a-zA-Z0-9 \-\']+$'
-            quantity_regex = r'^[1-9]\d*$'
-            return (
-                re.fullmatch(name_regex, item.name) is not None and
-                re.fullmatch(quantity_regex, item.quantity) is not None
-            )
-        def validate_user(user):
-            name_regex = r'^[a-zA-Z]+ [a-zA-Z]+$'
-            email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-            return (
-                re.fullmatch(name_regex, user.name) is not None and
-                re.fullmatch(email_regex, user.contact) is not None
-            )
-        def validate_credit_card(card):
-            number_regex = r'^[456]\d{15}$'
-            exp_date_regex = r'^(0[1-9]|1[0-2])\/\d{2}$'
-            cvv_regex = r'^\d{3}$'
-            return (
-                re.fullmatch(number_regex, card.number) is not None and
-                re.fullmatch(exp_date_regex, card.expirationDate) is not None and
-                re.fullmatch(cvv_regex, card.cvv) is not None
-            )
-        def validate_comment(comment):
-            comment_regex = r'^[a-zA-Z0-9 \-\'.,!?]*$'
-            return re.fullmatch(comment_regex, comment.comment) is not None
-        def validate_billing_address(address):
-            street_regex = r'^[a-zA-Z0-9 \-,\.]+$'
-            city_regex = r'^[a-zA-Z \-]+$'
-            state_regex = r'^[a-zA-Z ]+$'
-            zip_regex = r'^\d{5}(-\d{4})?$'
-            country_regex = r'^[a-zA-Z]{2,}$'
-            return (
-                re.fullmatch(street_regex, address.street) is not None and
-                re.fullmatch(city_regex, address.city) is not None and
-                re.fullmatch(state_regex, address.state) is not None and
-                re.fullmatch(zip_regex, address.zip) is not None and
-                re.fullmatch(country_regex, address.country) is not None
-            )
-        def validate_shipping_method(method):
-            return method in ["Standard", "Express", "Next-Day"]
-        
+
         logger.info(f"Checking transaction for card {request.creditCard.number} and user {request.user.name}")
 
-        # items
-        if not all(validate_item(item) for item in request.items):
-            return transaction_verification.VerificationResponse(success=False, comment="Item validation failed")
-        # user
-        if not validate_user(request.user):
-            return transaction_verification.VerificationResponse(success=False, comment="User validation failed")
-        # credit card
-        if not validate_credit_card(request.creditCard):
-            return transaction_verification.VerificationResponse(success=False, comment="Credit card validation failed")
-        # comment
-        if not validate_comment(request.comment):
-            return transaction_verification.VerificationResponse(success=False, comment="Comment validation failed")
-        # billing address
-        if not validate_billing_address(request.billingAddress):
-            return transaction_verification.VerificationResponse(success=False, comment="Address validation failed")
-        # shipping method
-        if not validate_shipping_method(request.shippingMethod):
-            return transaction_verification.VerificationResponse(success=False, comment="Shipping method invalid")
-        # gift wrapping doesn't need a check
-        # terms of service
+        # Submit checks concurrently
+        tasks = {
+            async_check_item_data(request.items): "Item validation failed",
+            async_check_user(request.user): "User validation failed",
+            async_check_credit_card(request.creditCard): "Credit card validation failed",
+            async_check_comment(request.comment): "Comment validation failed",
+            async_check_billing_address(request.billingAddress): "Address validation failed",
+            async_check_shipping_method(request.shippingMethod): "Shipping method invalid"
+        }
+
+        # Process completed tasks
+        for future in as_completed(tasks):
+            ok, error = future.result()
+            if not ok:
+                return transaction_verification.VerificationResponse(
+                    success=False,
+                    comment=error
+                )
+
+        # Terms & conditions check
         if request.termsAccepted is not True:
-            return transaction_verification.VerificationResponse(success=False, comment="Terms of service not accepted")
-        # if all checks pass
+            return transaction_verification.VerificationResponse(
+                success=False,
+                comment="Terms of service not accepted"
+            )
+
         return transaction_verification.VerificationResponse(success=True)
-    
+
 def serve():
-    # Create a gRPC server
     server = grpc.server(futures.ThreadPoolExecutor())
     transaction_verification_grpc.add_HelloServiceServicer_to_server(HelloService(), server)
-    transaction_verification_grpc.add_TransactionVerificationServiceServicer_to_server(TransactionVerificationService(), server)
-    # Listen on port 50051
+    transaction_verification_grpc.add_TransactionVerificationServiceServicer_to_server(
+        TransactionVerificationService(), server
+    )
     port = "50052"
     server.add_insecure_port("[::]:" + port)
-    # Start the server
     server.start()
     logger.info("Server started. Listening on port 50052.")
-    # Keep thread alive
     server.wait_for_termination()
 
 
