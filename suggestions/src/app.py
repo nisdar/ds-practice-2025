@@ -65,6 +65,11 @@ class SuggestionsService(suggestions_grpc.SuggestionsServiceServicer):
 
     def init_order(self, order_id, data):
         self.orders[order_id] = {"data" : data, "vc": [0] * self.total_svcs}
+    
+    def merge_and_increment(self, local_vc, incoming_vc):
+        for i in range(self.total_svcs):
+            local_vc[i] = max(local_vc[i], incoming_vc[i])
+        local_vc[self.svc_idx] += 1
 
     def SuggestBooks(self, request, context):
         card_number = request.card_number
