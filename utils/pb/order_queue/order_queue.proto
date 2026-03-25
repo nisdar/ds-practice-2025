@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+package order_queue;
+
+service OrderQueueService {
+    rpc AddToQueue (QueueAddRequest) returns (QueueResponse);
+    rpc RemoveFromQueue (QueueRemoveRequest) returns (QueueResponse);
+}
+
+message QueueAddRequest {
+    string addable_order = 1;
+}
+message QueueRemoveRequest {
+    string removable_order = 1;
+}
+
+message QueueResponse {
+    bool success = 1;
+    repeated string order_queue = 2;
+}
+
+
+
+service HelloService {
+    rpc SayHello (HelloRequest) returns (HelloResponse);
+}
+
+message HelloRequest {
+    string name = 1;
+}
+
+message HelloResponse {
+    string greeting = 1;
+}
