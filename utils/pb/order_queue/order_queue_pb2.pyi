@@ -6,25 +6,39 @@ from typing import ClassVar as _ClassVar, Optional as _Optional
 
 DESCRIPTOR: _descriptor.FileDescriptor
 
-class QueueAddRequest(_message.Message):
+class GetQueueRequest(_message.Message):
+    __slots__ = ()
+    def __init__(self) -> None: ...
+
+class GetQueueResponse(_message.Message):
+    __slots__ = ("orders",)
+    ORDERS_FIELD_NUMBER: _ClassVar[int]
+    orders: _containers.RepeatedScalarFieldContainer[str]
+    def __init__(self, orders: _Optional[_Iterable[str]] = ...) -> None: ...
+
+class EnqueueRequest(_message.Message):
     __slots__ = ("addable_order",)
     ADDABLE_ORDER_FIELD_NUMBER: _ClassVar[int]
     addable_order: str
     def __init__(self, addable_order: _Optional[str] = ...) -> None: ...
 
-class QueueRemoveRequest(_message.Message):
-    __slots__ = ("removable_order",)
-    REMOVABLE_ORDER_FIELD_NUMBER: _ClassVar[int]
-    removable_order: str
-    def __init__(self, removable_order: _Optional[str] = ...) -> None: ...
-
-class QueueResponse(_message.Message):
-    __slots__ = ("success", "order_queue")
+class EnqueueResponse(_message.Message):
+    __slots__ = ("success",)
     SUCCESS_FIELD_NUMBER: _ClassVar[int]
-    ORDER_QUEUE_FIELD_NUMBER: _ClassVar[int]
     success: bool
-    order_queue: _containers.RepeatedScalarFieldContainer[str]
-    def __init__(self, success: bool = ..., order_queue: _Optional[_Iterable[str]] = ...) -> None: ...
+    def __init__(self, success: bool = ...) -> None: ...
+
+class DequeueRequest(_message.Message):
+    __slots__ = ()
+    def __init__(self) -> None: ...
+
+class DequeueResponse(_message.Message):
+    __slots__ = ("success", "order")
+    SUCCESS_FIELD_NUMBER: _ClassVar[int]
+    ORDER_FIELD_NUMBER: _ClassVar[int]
+    success: bool
+    order: str
+    def __init__(self, success: bool = ..., order: _Optional[str] = ...) -> None: ...
 
 class HelloRequest(_message.Message):
     __slots__ = ("name",)

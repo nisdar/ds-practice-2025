@@ -113,15 +113,45 @@ services:
     volumes:
       - ./utils:/app/utils
       - ./order_queue/src:/app/order_queue/src
-  executor:
+  executor-1:
     build:
       context: ./
       dockerfile: ./executor/Dockerfile
-    ports:
-      - 50055:50055
+    hostname: executor-1
+    # no ports, because would collide on host
     environment:
       - PYTHONUNBUFFERED=TRUE
       - PYTHONFILE=/app/executor/src/app.py
+      - EXECUTOR_ID=1
+      - EXECUTOR_PEERS=1,2,3
+    volumes:
+      - ./utils:/app/utils
+      - ./executor/src:/app/executor/src
+  executor-2:
+    build:
+      context: ./
+      dockerfile: ./executor/Dockerfile
+    hostname: executor-2
+    # no ports, because would collide on host
+    environment:
+      - PYTHONUNBUFFERED=TRUE
+      - PYTHONFILE=/app/executor/src/app.py
+      - EXECUTOR_ID=2
+      - EXECUTOR_PEERS=1,2,3
+    volumes:
+      - ./utils:/app/utils
+      - ./executor/src:/app/executor/src
+  executor-3:
+    build:
+      context: ./
+      dockerfile: ./executor/Dockerfile
+    hostname: executor-3
+    # no ports, because would collide on host
+    environment:
+      - PYTHONUNBUFFERED=TRUE
+      - PYTHONFILE=/app/executor/src/app.py
+      - EXECUTOR_ID=3
+      - EXECUTOR_PEERS=1,2,3
     volumes:
       - ./utils:/app/utils
       - ./executor/src:/app/executor/src

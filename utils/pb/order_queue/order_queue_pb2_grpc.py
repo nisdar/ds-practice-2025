@@ -34,20 +34,31 @@ class OrderQueueServiceStub(object):
         Args:
             channel: A grpc.Channel.
         """
+        self.GetQueue = channel.unary_unary(
+                '/order_queue.OrderQueueService/GetQueue',
+                request_serializer=order__queue__pb2.GetQueueRequest.SerializeToString,
+                response_deserializer=order__queue__pb2.GetQueueResponse.FromString,
+                _registered_method=True)
         self.Enqueue = channel.unary_unary(
                 '/order_queue.OrderQueueService/Enqueue',
-                request_serializer=order__queue__pb2.QueueAddRequest.SerializeToString,
-                response_deserializer=order__queue__pb2.QueueResponse.FromString,
+                request_serializer=order__queue__pb2.EnqueueRequest.SerializeToString,
+                response_deserializer=order__queue__pb2.EnqueueResponse.FromString,
                 _registered_method=True)
         self.Dequeue = channel.unary_unary(
                 '/order_queue.OrderQueueService/Dequeue',
-                request_serializer=order__queue__pb2.QueueRemoveRequest.SerializeToString,
-                response_deserializer=order__queue__pb2.QueueResponse.FromString,
+                request_serializer=order__queue__pb2.DequeueRequest.SerializeToString,
+                response_deserializer=order__queue__pb2.DequeueResponse.FromString,
                 _registered_method=True)
 
 
 class OrderQueueServiceServicer(object):
     """Missing associated documentation comment in .proto file."""
+
+    def GetQueue(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
 
     def Enqueue(self, request, context):
         """Missing associated documentation comment in .proto file."""
@@ -64,15 +75,20 @@ class OrderQueueServiceServicer(object):
 
 def add_OrderQueueServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
+            'GetQueue': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetQueue,
+                    request_deserializer=order__queue__pb2.GetQueueRequest.FromString,
+                    response_serializer=order__queue__pb2.GetQueueResponse.SerializeToString,
+            ),
             'Enqueue': grpc.unary_unary_rpc_method_handler(
                     servicer.Enqueue,
-                    request_deserializer=order__queue__pb2.QueueAddRequest.FromString,
-                    response_serializer=order__queue__pb2.QueueResponse.SerializeToString,
+                    request_deserializer=order__queue__pb2.EnqueueRequest.FromString,
+                    response_serializer=order__queue__pb2.EnqueueResponse.SerializeToString,
             ),
             'Dequeue': grpc.unary_unary_rpc_method_handler(
                     servicer.Dequeue,
-                    request_deserializer=order__queue__pb2.QueueRemoveRequest.FromString,
-                    response_serializer=order__queue__pb2.QueueResponse.SerializeToString,
+                    request_deserializer=order__queue__pb2.DequeueRequest.FromString,
+                    response_serializer=order__queue__pb2.DequeueResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -84,6 +100,33 @@ def add_OrderQueueServiceServicer_to_server(servicer, server):
  # This class is part of an EXPERIMENTAL API.
 class OrderQueueService(object):
     """Missing associated documentation comment in .proto file."""
+
+    @staticmethod
+    def GetQueue(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/order_queue.OrderQueueService/GetQueue',
+            order__queue__pb2.GetQueueRequest.SerializeToString,
+            order__queue__pb2.GetQueueResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
 
     @staticmethod
     def Enqueue(request,
@@ -100,8 +143,8 @@ class OrderQueueService(object):
             request,
             target,
             '/order_queue.OrderQueueService/Enqueue',
-            order__queue__pb2.QueueAddRequest.SerializeToString,
-            order__queue__pb2.QueueResponse.FromString,
+            order__queue__pb2.EnqueueRequest.SerializeToString,
+            order__queue__pb2.EnqueueResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -127,8 +170,8 @@ class OrderQueueService(object):
             request,
             target,
             '/order_queue.OrderQueueService/Dequeue',
-            order__queue__pb2.QueueRemoveRequest.SerializeToString,
-            order__queue__pb2.QueueResponse.FromString,
+            order__queue__pb2.DequeueRequest.SerializeToString,
+            order__queue__pb2.DequeueResponse.FromString,
             options,
             channel_credentials,
             insecure,

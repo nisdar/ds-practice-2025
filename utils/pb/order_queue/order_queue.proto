@@ -3,25 +3,30 @@ syntax = "proto3";
 package order_queue;
 
 service OrderQueueService {
-    rpc GetQueue (QueueGetRequest) returns (QueueResponse);
-    rpc Enqueue (QueueAddRequest) returns (QueueResponse);
-    rpc Dequeue (QueueRemoveRequest) returns (QueueResponse);
+    rpc GetQueue (GetQueueRequest) returns (GetQueueResponse);
+    rpc Enqueue (EnqueueRequest) returns (EnqueueResponse);
+    rpc Dequeue (DequeueRequest) returns (DequeueResponse);
 }
 
-message QueueGetRequest {
+message GetQueueRequest {}
+message GetQueueResponse {
+    repeated string orders = 1;
 }
-message QueueAddRequest {
+
+message EnqueueRequest {
     string addable_order = 1;
 }
-message QueueRemoveRequest {
-    string removable_order = 1;
-}
-
-message QueueResponse {
+message EnqueueResponse {
     bool success = 1;
-    repeated string order_queue = 2;
 }
 
+message DequeueRequest {
+}
+
+message DequeueResponse {
+    bool success = 1;
+    string order = 2;
+}
 
 
 service HelloService {

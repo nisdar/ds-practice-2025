@@ -1,6 +1,8 @@
 import sys
 import os
 import re
+import threading
+import time
 
 #Set up logging
 import logging
@@ -32,56 +34,151 @@ class HelloService(executor_grpc.HelloServiceServicer):
         logger.debug(response.greeting)
         return response
 
+# This was made with the help of Copilot, based on a skeleton of code.
 class ExecutorService(executor_grpc.ExecutorServiceServicer):
-    def __init__(self, executor_id, known_ids, queue_stub):
-        self.executor_id = executor_id
-        self.known_ids = known_ids
+    def __init__(self, my_id, peer_ids, queue_stub):
+        self.my_id = int(my_id)
+        self.peer_ids = sorted(map(int, peer_ids))
         self.queue_stub = queue_stub
         self.leader_id = None
+        self.started = False
+        self.lock = threading.Lock()
+
+    def _next_peer(self, id_list):
+        idx = id_list.index(self.my_id)
+        next_idx = (idx + 1) % len(id_list)
+        return id_list[next_idx]
+
+    def _channel_for(self, peer_id):
+        host = f"executor-{peer_id}:50055"
+        return grpc.insecure_channel(host)
+
     
     # Starts a new LeaderElection
-    def StartLeaderElection():
-        # TODO pick a leader using chosen algorithm
-        # TODO i vote for ring election
-        ...
+    # We use election in a ring
+    def StartLeaderElection(self, request, context):
+        logger.info(f"{self.my_id}: Starting leader election")
+        ids = [self.my_id]
+        next_id = self._next_peer(self.peer_ids)
+        stub = executor_grpc.ExecutorServiceStub(
+            self._channel_for(next_id)
+        )
+        stub.ElectLeader(
+                executor.LeaderElectionRequest(
+                executors_ids=ids,
+                finished=False
+            )
+        )
+        return executor.LeaderElectionResponse(
+            executors_ids=ids,
+            finished=False
+        )
     
     # Continues an existing LeaderElection
-    def ElectLeader():
-        ...
+    def ElectLeader(self, request, context):
+        ids = list(request.executors_ids)
+        if self.my_id not in ids:
+            ids.append(self.my_id)
+        next_id = self._next_peer(self.peer_ids)
+        # If message returns to starter
+        if ids[0] == self.my_id and len(ids) > 1:
+            leader = max(ids)
+            logger.info(f"{self.my_id}: Election complete, leader={leader}")
+            # Broadcast announcement
+            next_id = self._next_peer(self.peer_ids)
+            stub = executor_grpc.ExecutorServiceStub(self._channel_for(next_id))
+            stub.AnnounceLeader(executor.LeaderAnnouncementRequest(
+                leader_id=leader,
+                finished=False
+            ))
+            return executor.LeaderElectionResponse(
+                executors_ids=ids,
+                finished=True
+            )
+        # Else forward message
+        next_id = self._next_peer(self.peer_ids)
+        stub = executor_grpc.ExecutorServiceStub(self._channel_for(next_id))
+        stub.ElectLeader(executor.LeaderElectionRequest(
+            executors_ids=ids,
+            finished=False
+        ))
+
+        return executor.LeaderElectionResponse(
+            executors_ids=ids,
+            finished=False
+        )
+
 
     # Announces the chosen leader
-    def AnnounceLeader():
-        ...
+    def AnnounceLeader(self, request, context):
+        leader = request.leader_id
+        with self.lock:
+            self.leader_id = leader
+
+        if leader == self.my_id and request.finished:
+            return executor.LeaderAnnouncementResponse(
+                leader_id=leader,
+                finished=True
+            )
+        next_id = self._next_peer(self.peer_ids)
+        stub = executor_grpc.ExecutorServiceStub(self._channel_for(next_id))
+        finished = (next_id == leader)
+        # fire-and-forget
+        stub.AnnounceLeader(executor.LeaderAnnouncementRequest(
+            leader_id=leader,
+            finished=finished
+        ))
+        return executor.LeaderAnnouncementResponse(
+            leader_id=leader,
+            finished=False
+        )
+
     
     def run(self):
-        # TODO im I'm the leader, repeatedly dequeue and "execute" orders
-        # else, watch or wait for changes in leadership
-        ...
+        logger.info(f"{self.my_id}: Executor main loop started")
+        time.sleep(2)
+        if not self.started:
+            self.started = True
+            logger.info(f"{self.my_id}: Starting election at startup")
+            stub = executor_grpc.ExecutorServiceStub(
+                self._channel_for(self._next_peer(self.peer_ids))
+            )
+            stub.StartLeaderElection(executor.LeaderElectionRequest())
+        while True:
+            if self.leader_id == self.my_id:
+                logger.info(f"{self.my_id}: I am the leader. Dequeuing...")
+                try:
+                    response = self.queue_stub.Dequeue(order_queue.DequeueRequest())
+                    if response.order_queue:
+                        logger.info("Order is being executed...")
+                except Exception as e:
+                    logger.error(f"Dequeue error: {e}")
+                time.sleep(1)
+            else:
+                time.sleep(1)
 
-# TODO this probably replaces serve() ? maybe
-def launch_executor(executor_id, known_ids):
-    # TODO set up gRPC, connect to order queue
-    with grpc.insecure_channel('order_queue:50054') as channel:
-        queue_stub = order_queue_grpc.OrderQueueServiceStub(channel)
-        queue_response = queue_stub.SayHello(order_queue.GetQueue())
-        svc = ExecutorService(0, [], queue_stub)
-        svc.StartLeaderElection()
-        svc.run()
+# This method was made with the help of Copilot from skeleton code.
+def launch_executor(my_id, peer_ids):
+    my_id = int(my_id)
+    peer_ids = list(map(int, peer_ids))
+    # Connect to order queue
+    channel = grpc.insecure_channel("order_queue:50054")
+    queue_stub = order_queue_grpc.OrderQueueServiceStub(channel)
+    service = ExecutorService(my_id, peer_ids, queue_stub)
 
+    # gRPC server for receiving election messages
+    grpc_server = grpc.server(futures.ThreadPoolExecutor())
+    executor_grpc.add_ExecutorServiceServicer_to_server(service, grpc_server)
+    executor_grpc.add_HelloServiceServicer_to_server(HelloService(), grpc_server)
+    grpc_server.add_insecure_port("[::]:50055")
+    grpc_server.start()
+    logger.info(f"Executor {my_id} gRPC server running on :50055")
+    # run election and processing loop in background
+    t = threading.Thread(target=service.run, daemon=True)
+    t.start()
+    grpc_server.wait_for_termination()
 
-def serve():
-    # Create a gRPC server
-    server = grpc.server(futures.ThreadPoolExecutor())
-    executor_grpc.add_HelloServiceServicer_to_server(HelloService(), server)
-    # Listen on port 50055
-    port = "50055"
-    server.add_insecure_port("[::]:" + port)
-    # Start the server
-    server.start()
-    logger.info("Server started. Listening on port 50055.")
-    # Keep thread alive
-    server.wait_for_termination()
-
-
-if __name__ == '__main__':
-    serve()
+if __name__ == "__main__":
+    my_id = int(os.getenv("EXECUTOR_ID", "1"))
+    peers = list(map(int, os.getenv("EXECUTOR_PEERS", "1").split(",")))
+    launch_executor(my_id, peers)

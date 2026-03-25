@@ -10,33 +10,33 @@ class LeaderElectionRequest(_message.Message):
     __slots__ = ("executors_ids", "finished")
     EXECUTORS_IDS_FIELD_NUMBER: _ClassVar[int]
     FINISHED_FIELD_NUMBER: _ClassVar[int]
-    executors_ids: _containers.RepeatedScalarFieldContainer[str]
+    executors_ids: _containers.RepeatedScalarFieldContainer[int]
     finished: bool
-    def __init__(self, executors_ids: _Optional[_Iterable[str]] = ..., finished: bool = ...) -> None: ...
+    def __init__(self, executors_ids: _Optional[_Iterable[int]] = ..., finished: bool = ...) -> None: ...
 
 class LeaderAnnouncementRequest(_message.Message):
     __slots__ = ("leader_id", "finished")
     LEADER_ID_FIELD_NUMBER: _ClassVar[int]
     FINISHED_FIELD_NUMBER: _ClassVar[int]
-    leader_id: str
+    leader_id: int
     finished: bool
-    def __init__(self, leader_id: _Optional[str] = ..., finished: bool = ...) -> None: ...
+    def __init__(self, leader_id: _Optional[int] = ..., finished: bool = ...) -> None: ...
 
 class LeaderElectionResponse(_message.Message):
     __slots__ = ("executors_ids", "finished")
     EXECUTORS_IDS_FIELD_NUMBER: _ClassVar[int]
     FINISHED_FIELD_NUMBER: _ClassVar[int]
-    executors_ids: _containers.RepeatedScalarFieldContainer[str]
+    executors_ids: _containers.RepeatedScalarFieldContainer[int]
     finished: bool
-    def __init__(self, executors_ids: _Optional[_Iterable[str]] = ..., finished: bool = ...) -> None: ...
+    def __init__(self, executors_ids: _Optional[_Iterable[int]] = ..., finished: bool = ...) -> None: ...
 
 class LeaderAnnouncementResponse(_message.Message):
     __slots__ = ("leader_id", "finished")
     LEADER_ID_FIELD_NUMBER: _ClassVar[int]
     FINISHED_FIELD_NUMBER: _ClassVar[int]
-    leader_id: str
+    leader_id: int
     finished: bool
-    def __init__(self, leader_id: _Optional[str] = ..., finished: bool = ...) -> None: ...
+    def __init__(self, leader_id: _Optional[int] = ..., finished: bool = ...) -> None: ...
 
 class HelloRequest(_message.Message):
     __slots__ = ("name",)

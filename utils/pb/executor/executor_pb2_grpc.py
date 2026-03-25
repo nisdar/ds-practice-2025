@@ -46,8 +46,8 @@ class ExecutorServiceStub(object):
                 _registered_method=True)
         self.AnnounceLeader = channel.unary_unary(
                 '/executor.ExecutorService/AnnounceLeader',
-                request_serializer=executor__pb2.LeaderElectionRequest.SerializeToString,
-                response_deserializer=executor__pb2.LeaderElectionResponse.FromString,
+                request_serializer=executor__pb2.LeaderAnnouncementRequest.SerializeToString,
+                response_deserializer=executor__pb2.LeaderAnnouncementResponse.FromString,
                 _registered_method=True)
 
 
@@ -87,8 +87,8 @@ def add_ExecutorServiceServicer_to_server(servicer, server):
             ),
             'AnnounceLeader': grpc.unary_unary_rpc_method_handler(
                     servicer.AnnounceLeader,
-                    request_deserializer=executor__pb2.LeaderElectionRequest.FromString,
-                    response_serializer=executor__pb2.LeaderElectionResponse.SerializeToString,
+                    request_deserializer=executor__pb2.LeaderAnnouncementRequest.FromString,
+                    response_serializer=executor__pb2.LeaderAnnouncementResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -170,8 +170,8 @@ class ExecutorService(object):
             request,
             target,
             '/executor.ExecutorService/AnnounceLeader',
-            executor__pb2.LeaderElectionRequest.SerializeToString,
-            executor__pb2.LeaderElectionResponse.FromString,
+            executor__pb2.LeaderAnnouncementRequest.SerializeToString,
+            executor__pb2.LeaderAnnouncementResponse.FromString,
             options,
             channel_credentials,
             insecure,

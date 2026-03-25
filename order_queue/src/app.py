@@ -14,7 +14,7 @@ logger = logging.getLogger("Order queue")
 FILE = __file__ if '__file__' in globals() else os.getenv("PYTHONFILE", "")
 order_queue_grpc_path = os.path.abspath(os.path.join(FILE, '../../../utils/pb/order_queue'))
 sys.path.insert(0, order_queue_grpc_path)
-import order_queue_pb2 as order_queue
+import order_queue_pb2 as oq
 import order_queue_pb2_grpc as order_queue_grpc
 
 import grpc
@@ -28,7 +28,9 @@ class HelloService(order_queue_grpc.HelloServiceServicer):
     # Create an RPC function to say hello
     def SayHello(self, request, context):
         # Create a HelloResponse object
-        response = order_queue.HelloResponse()
+        response = oq.HelloResponse(
+            greeting=f"Hello, {request.name}"
+        )
         # Set the greeting field of the response object
         response.greeting = "Hello, " + request.name
         # Log the greeting message
@@ -50,22 +52,19 @@ class QueueStorage:
         with self._lock:
             self._queue.append(order_id)
             logger.debug(f"Queue after enqueue: {self._queue}")
-            return True, list(self._queue)
-
+            return True
     def dequeue(self):
         with self._lock:
             if not self._queue:
                 logger.debug("Dequeue attempted but queue is empty.")
-                return True, None, []
-
+                return True, None
             removed = self._queue.pop(0)
             logger.debug(f"Dequeued: {removed}, queue now: {self._queue}")
-            return True, removed, list(self._queue)
-
+            return True, removed
     def get_queue(self):
         with self._lock:
             logger.debug(f"Queue read: {self._queue}")
-            return True, list(self._queue)
+            return list(self._queue)
 
 executor = ThreadPoolExecutor(max_workers=6)
 
@@ -87,34 +86,29 @@ class OrderQueueService(order_queue_grpc.OrderQueueServiceServicer):
         self.queue = QueueStorage()
 
     def GetQueue(self, request, context):
-        ok, order_queue = self.queue.get_queue()
-        return order_queue.QueueResponse(
-            success=ok,
-            order_queue=order_queue
+        queue_contents = self.queue.get_queue()
+        return oq.GetQueueResponse(
+            orders=queue_contents
         )
+
 
     def Enqueue(self, request, context):
         order_id = request.addable_order
         logger.info(f"Enqueue request: {order_id}")
-
-        ok, order_queue = self.queue.enqueue(order_id)
-        return order_queue.QueueResponse(
-            success=ok,
-            order_queue=order_queue
+        ok = self.queue.enqueue(order_id)
+        return oq.EnqueueResponse(
+            success=ok
         )
-
+        
     def Dequeue(self, request, context):
         logger.info("Dequeue request received")
+        ok, removed_order = self.queue.dequeue()
+        if removed_order:
+            logger.info(f"Dequeued order: {removed_order}")
 
-        ok, removed, order_queue = self.queue.dequeue()
-        # We don't expose the removed item directly in QueueResponse,
-        # but can log it for debugging
-        if removed:
-            logger.info(f"Dequeued order: {removed}")
-
-        return order_queue.QueueResponse(
+        return oq.DequeueResponse(
             success=ok,
-            order_queue=order_queue
+            order=removed_order if removed_order else ""
         )
 
 

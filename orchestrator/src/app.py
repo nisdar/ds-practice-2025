@@ -14,7 +14,9 @@ FILE = __file__ if '__file__' in globals() else os.getenv("PYTHONFILE", "")
 fraud_detection_grpc_path = os.path.abspath(os.path.join(FILE, '../../../utils/pb/fraud_detection'))
 transaction_verification_grpc_path = os.path.abspath(os.path.join(FILE, '../../../utils/pb/transaction_verification'))
 suggestions_grpc_path = os.path.abspath(os.path.join(FILE, '../../../utils/pb/suggestions'))
+order_queue_grpc_path = os.path.abspath(os.path.join(FILE, '../../../utils/pb/order_queue'))
 
+sys.path.insert(0, order_queue_grpc_path)
 sys.path.insert(0, fraud_detection_grpc_path)
 sys.path.insert(0, transaction_verification_grpc_path)
 sys.path.insert(0, suggestions_grpc_path)
@@ -25,6 +27,8 @@ import transaction_verification_pb2 as transaction_verification
 import transaction_verification_pb2_grpc as transaction_verification_grpc
 import suggestions_pb2 as suggestions
 import suggestions_pb2_grpc as suggestions_grpc
+import order_queue_pb2 as order_queue
+import order_queue_pb2_grpc as order_queue_grpc
 
 import grpc
 
@@ -135,6 +139,15 @@ def async_suggestions(card_number, order_amount):
     return executor.submit(call_suggestions, card_number, order_amount)
 
 
+# Helper function for enqueueing and deq-ing orders
+# Made with the help of Copilot
+def call_order_queue_enqueue(order_id):
+    with grpc.insecure_channel('order_queue:50054') as channel:
+        stub = order_queue_grpc.OrderQueueServiceStub(channel)
+        request = order_queue.EnqueueRequest(addable_order=order_id)
+        response = stub.Enqueue(request)
+    return response
+
 from flask import Flask, request
 from flask_cors import CORS
 import json
@@ -200,6 +213,10 @@ def checkout():
     status = "Order Approved"
     if not trx_response.success or fraud_response:
         status = "Order Rejected"
+
+    if status == "Order Approved":
+        queue_response = call_order_queue_enqueue(order_id)
+        logger.info(f"Order {order_id} enqueued: {queue_response.success}")
 
     suggestions_response = suggestions_future.result()
     logger.info(f"Suggested book IDs: {[s['id'] for s in suggestions_response]}")
