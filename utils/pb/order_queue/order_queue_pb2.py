@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x11order_queue.proto\x12\x0border_queue\"(\n\x0fQueueAddRequest\x12\x15\n\raddable_order\x18\x01 \x01(\t\"-\n\x12QueueRemoveRequest\x12\x17\n\x0fremovable_order\x18\x01 \x01(\t\"5\n\rQueueResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x13\n\x0border_queue\x18\x02 \x03(\t\"\x1c\n\x0cHelloRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\"!\n\rHelloResponse\x12\x10\n\x08greeting\x18\x01 \x01(\t2\xab\x01\n\x11OrderQueueService\x12\x46\n\nAddToQueue\x12\x1c.order_queue.QueueAddRequest\x1a\x1a.order_queue.QueueResponse\x12N\n\x0fRemoveFromQueue\x12\x1f.order_queue.QueueRemoveRequest\x1a\x1a.order_queue.QueueResponse2Q\n\x0cHelloService\x12\x41\n\x08SayHello\x12\x19.order_queue.HelloRequest\x1a\x1a.order_queue.HelloResponseb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x11order_queue.proto\x12\x0border_queue\"(\n\x0fQueueAddRequest\x12\x15\n\raddable_order\x18\x01 \x01(\t\"-\n\x12QueueRemoveRequest\x12\x17\n\x0fremovable_order\x18\x01 \x01(\t\"5\n\rQueueResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x13\n\x0border_queue\x18\x02 \x03(\t\"\x1c\n\x0cHelloRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\"!\n\rHelloResponse\x12\x10\n\x08greeting\x18\x01 \x01(\t2\xa0\x01\n\x11OrderQueueService\x12\x43\n\x07\x45nqueue\x12\x1c.order_queue.QueueAddRequest\x1a\x1a.order_queue.QueueResponse\x12\x46\n\x07\x44\x65queue\x12\x1f.order_queue.QueueRemoveRequest\x1a\x1a.order_queue.QueueResponse2Q\n\x0cHelloService\x12\x41\n\x08SayHello\x12\x19.order_queue.HelloRequest\x1a\x1a.order_queue.HelloResponseb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -42,7 +42,7 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_HELLORESPONSE']._serialized_start=208
   _globals['_HELLORESPONSE']._serialized_end=241
   _globals['_ORDERQUEUESERVICE']._serialized_start=244
-  _globals['_ORDERQUEUESERVICE']._serialized_end=415
-  _globals['_HELLOSERVICE']._serialized_start=417
-  _globals['_HELLOSERVICE']._serialized_end=498
+  _globals['_ORDERQUEUESERVICE']._serialized_end=404
+  _globals['_HELLOSERVICE']._serialized_start=406
+  _globals['_HELLOSERVICE']._serialized_end=487
 # @@protoc_insertion_point(module_scope)

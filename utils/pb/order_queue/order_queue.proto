@@ -3,8 +3,8 @@ syntax = "proto3";
 package order_queue;
 
 service OrderQueueService {
-    rpc AddToQueue (QueueAddRequest) returns (QueueResponse);
-    rpc RemoveFromQueue (QueueRemoveRequest) returns (QueueResponse);
+    rpc Enqueue (QueueAddRequest) returns (QueueResponse);
+    rpc Dequeue (QueueRemoveRequest) returns (QueueResponse);
 }
 
 message QueueAddRequest {

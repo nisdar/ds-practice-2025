@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+package executor;
+
+service ExecutorService {
+    rpc StartLeaderElection (LeaderElectionRequest) returns (LeaderElectionResponse);
+    rpc ElectLeader (LeaderElectionRequest) returns (LeaderElectionResponse);
+    rpc AnnounceLeader (LeaderElectionRequest) returns (LeaderElectionResponse);
+}
+
+message LeaderElectionRequest {
+    repeated string executors_ids = 1;
+    bool finished = 2;
+}
+message LeaderAnnouncementRequest {
+    string leader_id = 1;
+    bool finished = 2;
+}
+
+message LeaderElectionResponse {
+    repeated string executors_ids = 1;
+    bool finished = 2;
+}
+message LeaderAnnouncementResponse {
+    string leader_id = 1;
+    bool finished = 2;
+}
+
+
+
+
+service HelloService {
+    rpc SayHello (HelloRequest) returns (HelloResponse);
+}
+
+message HelloRequest {
+    string name = 1;
+}
+
+message HelloResponse {
+    string greeting = 1;
+}

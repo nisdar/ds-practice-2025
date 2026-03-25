@@ -3,7 +3,7 @@
 import grpc
 import warnings
 
-import order_queue_pb2 as order__queue__pb2
+import executor_pb2 as executor__pb2
 
 GRPC_GENERATED_VERSION = '1.78.0'
 GRPC_VERSION = grpc.__version__
@@ -18,14 +18,14 @@ except ImportError:
 if _version_not_supported:
     raise RuntimeError(
         f'The grpc package installed is at version {GRPC_VERSION},'
-        + ' but the generated code in order_queue_pb2_grpc.py depends on'
+        + ' but the generated code in executor_pb2_grpc.py depends on'
         + f' grpcio>={GRPC_GENERATED_VERSION}.'
         + f' Please upgrade your grpc module to grpcio>={GRPC_GENERATED_VERSION}'
         + f' or downgrade your generated code using grpcio-tools<={GRPC_VERSION}.'
     )
 
 
-class OrderQueueServiceStub(object):
+class ExecutorServiceStub(object):
     """Missing associated documentation comment in .proto file."""
 
     def __init__(self, channel):
@@ -34,59 +34,75 @@ class OrderQueueServiceStub(object):
         Args:
             channel: A grpc.Channel.
         """
-        self.Enqueue = channel.unary_unary(
-                '/order_queue.OrderQueueService/Enqueue',
-                request_serializer=order__queue__pb2.QueueAddRequest.SerializeToString,
-                response_deserializer=order__queue__pb2.QueueResponse.FromString,
+        self.StartLeaderElection = channel.unary_unary(
+                '/executor.ExecutorService/StartLeaderElection',
+                request_serializer=executor__pb2.LeaderElectionRequest.SerializeToString,
+                response_deserializer=executor__pb2.LeaderElectionResponse.FromString,
                 _registered_method=True)
-        self.Dequeue = channel.unary_unary(
-                '/order_queue.OrderQueueService/Dequeue',
-                request_serializer=order__queue__pb2.QueueRemoveRequest.SerializeToString,
-                response_deserializer=order__queue__pb2.QueueResponse.FromString,
+        self.ElectLeader = channel.unary_unary(
+                '/executor.ExecutorService/ElectLeader',
+                request_serializer=executor__pb2.LeaderElectionRequest.SerializeToString,
+                response_deserializer=executor__pb2.LeaderElectionResponse.FromString,
+                _registered_method=True)
+        self.AnnounceLeader = channel.unary_unary(
+                '/executor.ExecutorService/AnnounceLeader',
+                request_serializer=executor__pb2.LeaderElectionRequest.SerializeToString,
+                response_deserializer=executor__pb2.LeaderElectionResponse.FromString,
                 _registered_method=True)
 
 
-class OrderQueueServiceServicer(object):
+class ExecutorServiceServicer(object):
     """Missing associated documentation comment in .proto file."""
 
-    def Enqueue(self, request, context):
+    def StartLeaderElection(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def Dequeue(self, request, context):
+    def ElectLeader(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def AnnounceLeader(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
 
-def add_OrderQueueServiceServicer_to_server(servicer, server):
+def add_ExecutorServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
-            'Enqueue': grpc.unary_unary_rpc_method_handler(
-                    servicer.Enqueue,
-                    request_deserializer=order__queue__pb2.QueueAddRequest.FromString,
-                    response_serializer=order__queue__pb2.QueueResponse.SerializeToString,
+            'StartLeaderElection': grpc.unary_unary_rpc_method_handler(
+                    servicer.StartLeaderElection,
+                    request_deserializer=executor__pb2.LeaderElectionRequest.FromString,
+                    response_serializer=executor__pb2.LeaderElectionResponse.SerializeToString,
             ),
-            'Dequeue': grpc.unary_unary_rpc_method_handler(
-                    servicer.Dequeue,
-                    request_deserializer=order__queue__pb2.QueueRemoveRequest.FromString,
-                    response_serializer=order__queue__pb2.QueueResponse.SerializeToString,
+            'ElectLeader': grpc.unary_unary_rpc_method_handler(
+                    servicer.ElectLeader,
+                    request_deserializer=executor__pb2.LeaderElectionRequest.FromString,
+                    response_serializer=executor__pb2.LeaderElectionResponse.SerializeToString,
+            ),
+            'AnnounceLeader': grpc.unary_unary_rpc_method_handler(
+                    servicer.AnnounceLeader,
+                    request_deserializer=executor__pb2.LeaderElectionRequest.FromString,
+                    response_serializer=executor__pb2.LeaderElectionResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
-            'order_queue.OrderQueueService', rpc_method_handlers)
+            'executor.ExecutorService', rpc_method_handlers)
     server.add_generic_rpc_handlers((generic_handler,))
-    server.add_registered_method_handlers('order_queue.OrderQueueService', rpc_method_handlers)
+    server.add_registered_method_handlers('executor.ExecutorService', rpc_method_handlers)
 
 
  # This class is part of an EXPERIMENTAL API.
-class OrderQueueService(object):
+class ExecutorService(object):
     """Missing associated documentation comment in .proto file."""
 
     @staticmethod
-    def Enqueue(request,
+    def StartLeaderElection(request,
             target,
             options=(),
             channel_credentials=None,
@@ -99,9 +115,9 @@ class OrderQueueService(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/order_queue.OrderQueueService/Enqueue',
-            order__queue__pb2.QueueAddRequest.SerializeToString,
-            order__queue__pb2.QueueResponse.FromString,
+            '/executor.ExecutorService/StartLeaderElection',
+            executor__pb2.LeaderElectionRequest.SerializeToString,
+            executor__pb2.LeaderElectionResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -113,7 +129,7 @@ class OrderQueueService(object):
             _registered_method=True)
 
     @staticmethod
-    def Dequeue(request,
+    def ElectLeader(request,
             target,
             options=(),
             channel_credentials=None,
@@ -126,9 +142,36 @@ class OrderQueueService(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/order_queue.OrderQueueService/Dequeue',
-            order__queue__pb2.QueueRemoveRequest.SerializeToString,
-            order__queue__pb2.QueueResponse.FromString,
+            '/executor.ExecutorService/ElectLeader',
+            executor__pb2.LeaderElectionRequest.SerializeToString,
+            executor__pb2.LeaderElectionResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def AnnounceLeader(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/executor.ExecutorService/AnnounceLeader',
+            executor__pb2.LeaderElectionRequest.SerializeToString,
+            executor__pb2.LeaderElectionResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -150,9 +193,9 @@ class HelloServiceStub(object):
             channel: A grpc.Channel.
         """
         self.SayHello = channel.unary_unary(
-                '/order_queue.HelloService/SayHello',
-                request_serializer=order__queue__pb2.HelloRequest.SerializeToString,
-                response_deserializer=order__queue__pb2.HelloResponse.FromString,
+                '/executor.HelloService/SayHello',
+                request_serializer=executor__pb2.HelloRequest.SerializeToString,
+                response_deserializer=executor__pb2.HelloResponse.FromString,
                 _registered_method=True)
 
 
@@ -170,14 +213,14 @@ def add_HelloServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'SayHello': grpc.unary_unary_rpc_method_handler(
                     servicer.SayHello,
-                    request_deserializer=order__queue__pb2.HelloRequest.FromString,
-                    response_serializer=order__queue__pb2.HelloResponse.SerializeToString,
+                    request_deserializer=executor__pb2.HelloRequest.FromString,
+                    response_serializer=executor__pb2.HelloResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
-            'order_queue.HelloService', rpc_method_handlers)
+            'executor.HelloService', rpc_method_handlers)
     server.add_generic_rpc_handlers((generic_handler,))
-    server.add_registered_method_handlers('order_queue.HelloService', rpc_method_handlers)
+    server.add_registered_method_handlers('executor.HelloService', rpc_method_handlers)
 
 
  # This class is part of an EXPERIMENTAL API.
@@ -198,9 +241,9 @@ class HelloService(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/order_queue.HelloService/SayHello',
-            order__queue__pb2.HelloRequest.SerializeToString,
-            order__queue__pb2.HelloResponse.FromString,
+            '/executor.HelloService/SayHello',
+            executor__pb2.HelloRequest.SerializeToString,
+            executor__pb2.HelloResponse.FromString,
             options,
             channel_credentials,
             insecure,

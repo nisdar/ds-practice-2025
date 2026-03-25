@@ -35,19 +35,23 @@ class HelloService(order_queue_grpc.HelloServiceServicer):
         # Return the response object
         return response
 
-class OrderQueueService(order_queue_grpc.HelloServiceServicer):
+class OrderQueueService(order_queue_grpc.OrderQueueServiceServicer):
     def __init__(self, svc_idx=0, total_svcs=3):
         self.svc_idx = svc_idx
         self.total_svcs = total_svcs
         self.order_queue = []
 
     # Returns (bool, string[])
-    def AddToQueue(self, request, context):
+    def Enqueue(self, request, context):
+        # TODO: lock queue, insert request.orderId
+        # TODO: return success response
         ...
         return order_queue.QueueResponse(success=True, order_queue=self.order_queue)
     # Returns (bool, string[])
-    def RemoveFromQueue(self, request, context):
+    def Dequeue(self, request, context):
         ...
+        # TODO: lock queue, pop an order if available
+        # TODO: return the dequeued order on an empty result
         return order_queue.QueueResponse(success=True, order_queue=self.order_queue)
 
 def serve():
