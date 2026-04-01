@@ -25,7 +25,7 @@ _sym_db = _symbol_database.Default()
 from google.protobuf import empty_pb2 as google_dot_protobuf_dot_empty__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1etransaction_verification.proto\x12\x18transaction_verification\x1a\x1bgoogle/protobuf/empty.proto\"\xeb\x02\n\x13VerificationRequest\x12\x31\n\x05items\x18\x01 \x03(\x0b\x32\".transaction_verification.ItemData\x12,\n\x04user\x18\x02 \x01(\x0b\x32\x1e.transaction_verification.User\x12\x38\n\ncreditCard\x18\x03 \x01(\x0b\x32$.transaction_verification.CreditCard\x12\x32\n\x07\x63omment\x18\x04 \x01(\x0b\x32!.transaction_verification.Comment\x12@\n\x0e\x62illingAddress\x18\x05 \x01(\x0b\x32(.transaction_verification.BillingAddress\x12\x16\n\x0eshippingMethod\x18\x06 \x01(\t\x12\x14\n\x0cgiftWrapping\x18\x07 \x01(\x08\x12\x15\n\rtermsAccepted\x18\x08 \x01(\x08\"I\n\x14VerificationResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x14\n\x07\x63omment\x18\x02 \x01(\tH\x00\x88\x01\x01\x42\n\n\x08_comment\"A\n\nCreditCard\x12\x0e\n\x06number\x18\x01 \x01(\t\x12\x16\n\x0e\x65xpirationDate\x18\x02 \x01(\t\x12\x0b\n\x03\x63vv\x18\x03 \x01(\t\"[\n\x0e\x42illingAddress\x12\x0e\n\x06street\x18\x01 \x01(\t\x12\x0c\n\x04\x63ity\x18\x02 \x01(\t\x12\r\n\x05state\x18\x03 \x01(\t\x12\x0b\n\x03zip\x18\x04 \x01(\t\x12\x0f\n\x07\x63ountry\x18\x05 \x01(\t\"%\n\x04User\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0f\n\x07\x63ontact\x18\x02 \x01(\t\"S\n\tOrderInfo\x12\n\n\x02id\x18\x01 \x01(\t\x12:\n\x0bvectorClock\x18\x02 \x01(\x0b\x32%.transaction_verification.VectorClock\"*\n\x08ItemData\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x10\n\x08quantity\x18\x02 \x01(\t\"\xf2\x02\n\tOrderData\x12\x0f\n\x07orderId\x18\x01 \x01(\t\x12\x31\n\x05items\x18\x02 \x03(\x0b\x32\".transaction_verification.ItemData\x12,\n\x04user\x18\x03 \x01(\x0b\x32\x1e.transaction_verification.User\x12\x38\n\ncreditCard\x18\x04 \x01(\x0b\x32$.transaction_verification.CreditCard\x12\x32\n\x07\x63omment\x18\x05 \x01(\x0b\x32!.transaction_verification.Comment\x12@\n\x0e\x62illingAddress\x18\x06 \x01(\x0b\x32(.transaction_verification.BillingAddress\x12\x16\n\x0eshippingMethod\x18\x07 \x01(\t\x12\x14\n\x0cgiftWrapping\x18\x08 \x01(\x08\x12\x15\n\rtermsAccepted\x18\t \x01(\x08\"[\n\x0bVectorClock\x12\x1f\n\x17transactionVerification\x18\x01 \x01(\x05\x12\x16\n\x0e\x66raudDetection\x18\x02 \x01(\x05\x12\x13\n\x0bsuggestions\x18\x03 \x01(\x05\"1\n\x04\x42ook\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0e\n\x06\x61uthor\x18\x02 \x01(\t\x12\r\n\x05title\x18\x03 \x01(\t\"\x1a\n\x07\x43omment\x12\x0f\n\x07\x63omment\x18\x01 \x01(\t\"\x13\n\x11\x43learDataResponse\"\x91\x01\n\rOrderResponse\x12:\n\x0bvectorClock\x18\x01 \x01(\x0b\x32%.transaction_verification.VectorClock\x12\x0f\n\x07success\x18\x02 \x01(\x08\x12\x33\n\x0bsuggestions\x18\x03 \x03(\x0b\x32\x1e.transaction_verification.Book\"\x1c\n\x0cHelloRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\"!\n\rHelloResponse\x12\x10\n\x08greeting\x18\x01 \x01(\t2\xd6\x02\n\x1eTransactionVerificationService\x12r\n\x11VerifyTransaction\x12-.transaction_verification.VerificationRequest\x1a..transaction_verification.VerificationResponse\x12\x64\n\x14VerifyTransactionNew\x12#.transaction_verification.OrderInfo\x1a\'.transaction_verification.OrderResponse\x12Z\n\x1bInitTransactionVerification\x12#.transaction_verification.OrderData\x1a\x16.google.protobuf.Empty2k\n\x0cHelloService\x12[\n\x08SayHello\x12&.transaction_verification.HelloRequest\x1a\'.transaction_verification.HelloResponseb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1etransaction_verification.proto\x12\x18transaction_verification\x1a\x1bgoogle/protobuf/empty.proto\"\xeb\x02\n\x13VerificationRequest\x12\x31\n\x05items\x18\x01 \x03(\x0b\x32\".transaction_verification.ItemData\x12,\n\x04user\x18\x02 \x01(\x0b\x32\x1e.transaction_verification.User\x12\x38\n\ncreditCard\x18\x03 \x01(\x0b\x32$.transaction_verification.CreditCard\x12\x32\n\x07\x63omment\x18\x04 \x01(\x0b\x32!.transaction_verification.Comment\x12@\n\x0e\x62illingAddress\x18\x05 \x01(\x0b\x32(.transaction_verification.BillingAddress\x12\x16\n\x0eshippingMethod\x18\x06 \x01(\t\x12\x14\n\x0cgiftWrapping\x18\x07 \x01(\x08\x12\x15\n\rtermsAccepted\x18\x08 \x01(\x08\"I\n\x14VerificationResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x14\n\x07\x63omment\x18\x02 \x01(\tH\x00\x88\x01\x01\x42\n\n\x08_comment\"A\n\nCreditCard\x12\x0e\n\x06number\x18\x01 \x01(\t\x12\x16\n\x0e\x65xpirationDate\x18\x02 \x01(\t\x12\x0b\n\x03\x63vv\x18\x03 \x01(\t\"[\n\x0e\x42illingAddress\x12\x0e\n\x06street\x18\x01 \x01(\t\x12\x0c\n\x04\x63ity\x18\x02 \x01(\t\x12\r\n\x05state\x18\x03 \x01(\t\x12\x0b\n\x03zip\x18\x04 \x01(\t\x12\x0f\n\x07\x63ountry\x18\x05 \x01(\t\"%\n\x04User\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0f\n\x07\x63ontact\x18\x02 \x01(\t\"S\n\tOrderInfo\x12\n\n\x02id\x18\x01 \x01(\t\x12:\n\x0bvectorClock\x18\x02 \x01(\x0b\x32%.transaction_verification.VectorClock\"*\n\x08ItemData\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x10\n\x08quantity\x18\x02 \x01(\t\"\xf2\x02\n\tOrderData\x12\x0f\n\x07orderId\x18\x01 \x01(\t\x12\x31\n\x05items\x18\x02 \x03(\x0b\x32\".transaction_verification.ItemData\x12,\n\x04user\x18\x03 \x01(\x0b\x32\x1e.transaction_verification.User\x12\x38\n\ncreditCard\x18\x04 \x01(\x0b\x32$.transaction_verification.CreditCard\x12\x32\n\x07\x63omment\x18\x05 \x01(\x0b\x32!.transaction_verification.Comment\x12@\n\x0e\x62illingAddress\x18\x06 \x01(\x0b\x32(.transaction_verification.BillingAddress\x12\x16\n\x0eshippingMethod\x18\x07 \x01(\t\x12\x14\n\x0cgiftWrapping\x18\x08 \x01(\x08\x12\x15\n\rtermsAccepted\x18\t \x01(\x08\" \n\x0bVectorClock\x12\x11\n\ttimeStamp\x18\x01 \x03(\x05\"1\n\x04\x42ook\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0e\n\x06\x61uthor\x18\x02 \x01(\t\x12\r\n\x05title\x18\x03 \x01(\t\"\x1a\n\x07\x43omment\x12\x0f\n\x07\x63omment\x18\x01 \x01(\t\"\x13\n\x11\x43learDataResponse\"\x91\x01\n\rOrderResponse\x12:\n\x0bvectorClock\x18\x01 \x01(\x0b\x32%.transaction_verification.VectorClock\x12\x0f\n\x07success\x18\x02 \x01(\x08\x12\x33\n\x0bsuggestions\x18\x03 \x03(\x0b\x32\x1e.transaction_verification.Book\"\x1c\n\x0cHelloRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\"!\n\rHelloResponse\x12\x10\n\x08greeting\x18\x01 \x01(\t2\xd6\x02\n\x1eTransactionVerificationService\x12r\n\x11VerifyTransaction\x12-.transaction_verification.VerificationRequest\x1a..transaction_verification.VerificationResponse\x12\x64\n\x14VerifyTransactionNew\x12#.transaction_verification.OrderInfo\x1a\'.transaction_verification.OrderResponse\x12Z\n\x1bInitTransactionVerification\x12#.transaction_verification.OrderData\x1a\x16.google.protobuf.Empty2k\n\x0cHelloService\x12[\n\x08SayHello\x12&.transaction_verification.HelloRequest\x1a\'.transaction_verification.HelloResponseb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -49,21 +49,21 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_ORDERDATA']._serialized_start=859
   _globals['_ORDERDATA']._serialized_end=1229
   _globals['_VECTORCLOCK']._serialized_start=1231
-  _globals['_VECTORCLOCK']._serialized_end=1322
-  _globals['_BOOK']._serialized_start=1324
-  _globals['_BOOK']._serialized_end=1373
-  _globals['_COMMENT']._serialized_start=1375
-  _globals['_COMMENT']._serialized_end=1401
-  _globals['_CLEARDATARESPONSE']._serialized_start=1403
-  _globals['_CLEARDATARESPONSE']._serialized_end=1422
-  _globals['_ORDERRESPONSE']._serialized_start=1425
-  _globals['_ORDERRESPONSE']._serialized_end=1570
-  _globals['_HELLOREQUEST']._serialized_start=1572
-  _globals['_HELLOREQUEST']._serialized_end=1600
-  _globals['_HELLORESPONSE']._serialized_start=1602
-  _globals['_HELLORESPONSE']._serialized_end=1635
-  _globals['_TRANSACTIONVERIFICATIONSERVICE']._serialized_start=1638
-  _globals['_TRANSACTIONVERIFICATIONSERVICE']._serialized_end=1980
-  _globals['_HELLOSERVICE']._serialized_start=1982
-  _globals['_HELLOSERVICE']._serialized_end=2089
+  _globals['_VECTORCLOCK']._serialized_end=1263
+  _globals['_BOOK']._serialized_start=1265
+  _globals['_BOOK']._serialized_end=1314
+  _globals['_COMMENT']._serialized_start=1316
+  _globals['_COMMENT']._serialized_end=1342
+  _globals['_CLEARDATARESPONSE']._serialized_start=1344
+  _globals['_CLEARDATARESPONSE']._serialized_end=1363
+  _globals['_ORDERRESPONSE']._serialized_start=1366
+  _globals['_ORDERRESPONSE']._serialized_end=1511
+  _globals['_HELLOREQUEST']._serialized_start=1513
+  _globals['_HELLOREQUEST']._serialized_end=1541
+  _globals['_HELLORESPONSE']._serialized_start=1543
+  _globals['_HELLORESPONSE']._serialized_end=1576
+  _globals['_TRANSACTIONVERIFICATIONSERVICE']._serialized_start=1579
+  _globals['_TRANSACTIONVERIFICATIONSERVICE']._serialized_end=1921
+  _globals['_HELLOSERVICE']._serialized_start=1923
+  _globals['_HELLOSERVICE']._serialized_end=2030
 # @@protoc_insertion_point(module_scope)

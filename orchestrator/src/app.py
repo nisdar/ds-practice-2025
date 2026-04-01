@@ -55,6 +55,19 @@ def call_fraud_detection(card_number, order_amount):
         response = stub.CheckFraud(request_obj)
     return response.is_fraud
 
+def call_fraud_detection_new(order_id, vc):
+    # Establish a connection with the fraud-detection gRPC service.
+    with grpc.insecure_channel('fraud_detection:50051') as channel:
+        # Create a stub object.
+        stub = fraud_detection_grpc.FraudDetectionServiceStub(channel)
+        request_obj = fraud_detection.OrderInfo(
+            id=order_id,
+            vectorClock=fraud_detection.VectorClock(timeStamp=vc)
+        )
+        # Call the service through the stub object.
+        response = stub.CheckFraudNew(request_obj)
+    return response
+
 def call_transaction_verification(items, user, card, comment, billing_address, shipping_method, gift_wrapping, terms_accepted):
     ### due to dictionary usage, transformed to PB2 dictionaries with help from Mistral Le Chat
     # Convert items
@@ -205,8 +218,8 @@ def formatOrderData(service, order_id, request_data):
 from concurrent.futures import ThreadPoolExecutor
 executor = ThreadPoolExecutor(max_workers=6)
 ## asynchronously calling the services
-def async_fraud_detection(card_number, order_amount):
-    return executor.submit(call_fraud_detection, card_number, order_amount)
+def async_fraud_detection(order_id, vc): #MODIFIED
+    return executor.submit(call_fraud_detection_new, order_id, vc)
 def async_transaction_verification(items, user, card, comment, billing_address, shipping_method, gift_wrapping, terms_accepted):
     return executor.submit(call_transaction_verification, items, user, card, comment, billing_address, shipping_method, gift_wrapping, terms_accepted)
 def async_suggestions(card_number, order_amount):
@@ -254,7 +267,7 @@ def checkout():
     request_data = json.loads(request.data)
 
     items = request_data.get("items")
-    amount = sum(item["quantity"] for item in items)
+    #amount = sum(item["quantity"] for item in items)
 
     user = request_data.get("user")
     card = request_data.get("creditCard")
@@ -280,7 +293,10 @@ def checkout():
         gift_wrapping, terms_accepted
     )
 
-    fraud_future = async_fraud_detection(card["number"], amount)
+    #Fraud detetcion has been changed
+    fraud_future = async_fraud_detection(order_id, [0, 0, 0]) #using a dummy vector clock
+    
+    
     suggestions_future = async_suggestions("123", 1)
 
     trx_response = trx_future.result()
@@ -290,7 +306,7 @@ def checkout():
     logger.info(f"Fraud detection: {fraud_response}")
 
     status = "Order Approved"
-    if not trx_response.success or fraud_response:
+    if not trx_response.success or not fraud_response.success:
         status = "Order Rejected"
 
     if status == "Order Approved":

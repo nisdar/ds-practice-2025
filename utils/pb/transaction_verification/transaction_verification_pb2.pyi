@@ -106,14 +106,10 @@ class OrderData(_message.Message):
     def __init__(self, orderId: _Optional[str] = ..., items: _Optional[_Iterable[_Union[ItemData, _Mapping]]] = ..., user: _Optional[_Union[User, _Mapping]] = ..., creditCard: _Optional[_Union[CreditCard, _Mapping]] = ..., comment: _Optional[_Union[Comment, _Mapping]] = ..., billingAddress: _Optional[_Union[BillingAddress, _Mapping]] = ..., shippingMethod: _Optional[str] = ..., giftWrapping: bool = ..., termsAccepted: bool = ...) -> None: ...
 
 class VectorClock(_message.Message):
-    __slots__ = ("transactionVerification", "fraudDetection", "suggestions")
-    TRANSACTIONVERIFICATION_FIELD_NUMBER: _ClassVar[int]
-    FRAUDDETECTION_FIELD_NUMBER: _ClassVar[int]
-    SUGGESTIONS_FIELD_NUMBER: _ClassVar[int]
-    transactionVerification: int
-    fraudDetection: int
-    suggestions: int
-    def __init__(self, transactionVerification: _Optional[int] = ..., fraudDetection: _Optional[int] = ..., suggestions: _Optional[int] = ...) -> None: ...
+    __slots__ = ("timeStamp",)
+    TIMESTAMP_FIELD_NUMBER: _ClassVar[int]
+    timeStamp: _containers.RepeatedScalarFieldContainer[int]
+    def __init__(self, timeStamp: _Optional[_Iterable[int]] = ...) -> None: ...
 
 class Book(_message.Message):
     __slots__ = ("id", "author", "title")

@@ -67,9 +67,7 @@ message OrderData {
 }
 
 message VectorClock {
-    int32 transactionVerification = 1;
-    int32 fraudDetection = 2;
-    int32 suggestions = 3;
+    repeated int32 timeStamp = 1;
 }
 
 message Book {
