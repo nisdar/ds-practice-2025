@@ -1,6 +1,7 @@
 import sys
 import os
 import random # Currently used for dummy logic, randomly return a book as there is no way to choose inventory
+from google.protobuf.empty_pb2 import Empty
 
 #Set up logging
 import logging
@@ -58,18 +59,23 @@ def async_suggest():
     return executor.submit(...)
 
 class SuggestionsService(suggestions_grpc.SuggestionsServiceServicer):
-    def __init__(self, svc_idx=0, total_svcs=3):
+    def __init__(self, svc_idx=2, total_svcs=3):
         self.svc_idx = svc_idx
         self.total_svcs = total_svcs
         self.orders = {}
 
-    def init_order(self, order_id, data):
-        self.orders[order_id] = {"data" : data, "vc": [0] * self.total_svcs}
+    #def init_order(self, order_id, data):
+    #    self.orders[order_id] = {"data" : data, "vc": [0] * self.total_svcs}
     
     def merge_and_increment(self, local_vc, incoming_vc):
         for i in range(self.total_svcs):
             local_vc[i] = max(local_vc[i], incoming_vc[i])
         local_vc[self.svc_idx] += 1
+    
+    def InitSuggestions(self, request, context):
+        order_id = request.orderId
+        self.orders[order_id] = {"data" : request, "vc": [0] * self.total_svcs}
+        return Empty()
 
     def SuggestBooks(self, request, context):
         card_number = request.card_number

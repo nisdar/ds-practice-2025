@@ -4,6 +4,7 @@ import grpc
 import warnings
 
 import fraud_detection_pb2 as fraud__detection__pb2
+from google.protobuf import empty_pb2 as google_dot_protobuf_dot_empty__pb2
 
 GRPC_GENERATED_VERSION = '1.78.0'
 GRPC_VERSION = grpc.__version__
@@ -39,12 +40,34 @@ class FraudDetectionServiceStub(object):
                 request_serializer=fraud__detection__pb2.FraudRequest.SerializeToString,
                 response_deserializer=fraud__detection__pb2.FraudResponse.FromString,
                 _registered_method=True)
+        self.CheckFraudNew = channel.unary_unary(
+                '/fraud_detection.FraudDetectionService/CheckFraudNew',
+                request_serializer=fraud__detection__pb2.OrderInfo.SerializeToString,
+                response_deserializer=fraud__detection__pb2.OrderResponse.FromString,
+                _registered_method=True)
+        self.InitFraudDetection = channel.unary_unary(
+                '/fraud_detection.FraudDetectionService/InitFraudDetection',
+                request_serializer=fraud__detection__pb2.OrderData.SerializeToString,
+                response_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
+                _registered_method=True)
 
 
 class FraudDetectionServiceServicer(object):
     """Missing associated documentation comment in .proto file."""
 
     def CheckFraud(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def CheckFraudNew(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def InitFraudDetection(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -57,6 +80,16 @@ def add_FraudDetectionServiceServicer_to_server(servicer, server):
                     servicer.CheckFraud,
                     request_deserializer=fraud__detection__pb2.FraudRequest.FromString,
                     response_serializer=fraud__detection__pb2.FraudResponse.SerializeToString,
+            ),
+            'CheckFraudNew': grpc.unary_unary_rpc_method_handler(
+                    servicer.CheckFraudNew,
+                    request_deserializer=fraud__detection__pb2.OrderInfo.FromString,
+                    response_serializer=fraud__detection__pb2.OrderResponse.SerializeToString,
+            ),
+            'InitFraudDetection': grpc.unary_unary_rpc_method_handler(
+                    servicer.InitFraudDetection,
+                    request_deserializer=fraud__detection__pb2.OrderData.FromString,
+                    response_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -86,6 +119,60 @@ class FraudDetectionService(object):
             '/fraud_detection.FraudDetectionService/CheckFraud',
             fraud__detection__pb2.FraudRequest.SerializeToString,
             fraud__detection__pb2.FraudResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def CheckFraudNew(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/fraud_detection.FraudDetectionService/CheckFraudNew',
+            fraud__detection__pb2.OrderInfo.SerializeToString,
+            fraud__detection__pb2.OrderResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def InitFraudDetection(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/fraud_detection.FraudDetectionService/InitFraudDetection',
+            fraud__detection__pb2.OrderData.SerializeToString,
+            google_dot_protobuf_dot_empty__pb2.Empty.FromString,
             options,
             channel_credentials,
             insecure,

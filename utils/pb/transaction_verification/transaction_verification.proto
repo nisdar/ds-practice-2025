@@ -2,8 +2,12 @@ syntax = "proto3";
 
 package transaction_verification;
 
+import "google/protobuf/empty.proto";
+
 service TransactionVerificationService {
     rpc VerifyTransaction (VerificationRequest) returns (VerificationResponse);
+    rpc VerifyTransactionNew (OrderInfo) returns (OrderResponse);
+    rpc InitTransactionVerification (OrderData) returns (google.protobuf.Empty);
 }
 
 message VerificationRequest {
@@ -22,24 +26,13 @@ message VerificationResponse {
     optional string comment = 2;
 }
 
-message ItemData {
-    string name = 1;
-    string quantity = 2;
-}
 
-message User {
-    string name = 1;
-    string contact = 2;
-}
+
 
 message CreditCard {
     string number = 1;
     string expirationDate = 2;
     string cvv = 3;
-}
-
-message Comment {
-    string comment = 1;
 }
 
 message BillingAddress {
@@ -48,6 +41,58 @@ message BillingAddress {
     string state = 3;
     string zip = 4;
     string country = 5;
+}
+
+message User {
+    string name = 1;
+    string contact = 2;
+}
+
+message OrderInfo {
+    string id = 1;
+    VectorClock vectorClock = 2;
+}
+
+message ItemData {
+    string name = 1;
+    string quantity = 2;
+}
+
+message OrderData {
+    string orderId = 1;
+    repeated ItemData items = 2;
+    User user = 3;
+    CreditCard creditCard = 4;
+    Comment comment = 5;
+    BillingAddress billingAddress = 6;
+    string shippingMethod = 7;
+    bool giftWrapping = 8;
+    bool termsAccepted = 9;
+}
+
+message VectorClock {
+    int32 transactionVerification = 1;
+    int32 fraudDetection = 2;
+    int32 suggestions = 3;
+}
+
+message Book {
+    string id = 1;
+    string author = 2;
+    string title = 3;
+}
+
+message Comment {
+    string comment = 1;
+}
+
+message ClearDataResponse {
+}
+
+message OrderResponse {
+    VectorClock vectorClock = 1;
+    bool success = 2;
+    repeated Book suggestions = 3;
 }
 
 
