@@ -3,6 +3,7 @@
 import grpc
 import warnings
 
+from google.protobuf import empty_pb2 as google_dot_protobuf_dot_empty__pb2
 import transaction_verification_pb2 as transaction__verification__pb2
 
 GRPC_GENERATED_VERSION = '1.78.0'
@@ -39,12 +40,34 @@ class TransactionVerificationServiceStub(object):
                 request_serializer=transaction__verification__pb2.VerificationRequest.SerializeToString,
                 response_deserializer=transaction__verification__pb2.VerificationResponse.FromString,
                 _registered_method=True)
+        self.VerifyTransactionNew = channel.unary_unary(
+                '/transaction_verification.TransactionVerificationService/VerifyTransactionNew',
+                request_serializer=transaction__verification__pb2.OrderInfo.SerializeToString,
+                response_deserializer=transaction__verification__pb2.OrderResponse.FromString,
+                _registered_method=True)
+        self.InitTransactionVerification = channel.unary_unary(
+                '/transaction_verification.TransactionVerificationService/InitTransactionVerification',
+                request_serializer=transaction__verification__pb2.OrderData.SerializeToString,
+                response_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
+                _registered_method=True)
 
 
 class TransactionVerificationServiceServicer(object):
     """Missing associated documentation comment in .proto file."""
 
     def VerifyTransaction(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def VerifyTransactionNew(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def InitTransactionVerification(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -57,6 +80,16 @@ def add_TransactionVerificationServiceServicer_to_server(servicer, server):
                     servicer.VerifyTransaction,
                     request_deserializer=transaction__verification__pb2.VerificationRequest.FromString,
                     response_serializer=transaction__verification__pb2.VerificationResponse.SerializeToString,
+            ),
+            'VerifyTransactionNew': grpc.unary_unary_rpc_method_handler(
+                    servicer.VerifyTransactionNew,
+                    request_deserializer=transaction__verification__pb2.OrderInfo.FromString,
+                    response_serializer=transaction__verification__pb2.OrderResponse.SerializeToString,
+            ),
+            'InitTransactionVerification': grpc.unary_unary_rpc_method_handler(
+                    servicer.InitTransactionVerification,
+                    request_deserializer=transaction__verification__pb2.OrderData.FromString,
+                    response_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -86,6 +119,60 @@ class TransactionVerificationService(object):
             '/transaction_verification.TransactionVerificationService/VerifyTransaction',
             transaction__verification__pb2.VerificationRequest.SerializeToString,
             transaction__verification__pb2.VerificationResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def VerifyTransactionNew(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/transaction_verification.TransactionVerificationService/VerifyTransactionNew',
+            transaction__verification__pb2.OrderInfo.SerializeToString,
+            transaction__verification__pb2.OrderResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def InitTransactionVerification(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/transaction_verification.TransactionVerificationService/InitTransactionVerification',
+            transaction__verification__pb2.OrderData.SerializeToString,
+            google_dot_protobuf_dot_empty__pb2.Empty.FromString,
             options,
             channel_credentials,
             insecure,

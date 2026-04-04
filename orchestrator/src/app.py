@@ -55,6 +55,19 @@ def call_fraud_detection(card_number, order_amount):
         response = stub.CheckFraud(request_obj)
     return response.is_fraud
 
+def call_fraud_detection_new(order_id, vc):
+    # Establish a connection with the fraud-detection gRPC service.
+    with grpc.insecure_channel('fraud_detection:50051') as channel:
+        # Create a stub object.
+        stub = fraud_detection_grpc.FraudDetectionServiceStub(channel)
+        request_obj = fraud_detection.OrderInfo(
+            id=order_id,
+            vectorClock=fraud_detection.VectorClock(timeStamp=vc)
+        )
+        # Call the service through the stub object.
+        response = stub.CheckFraudNew(request_obj)
+    return response
+
 def call_transaction_verification(items, user, card, comment, billing_address, shipping_method, gift_wrapping, terms_accepted):
     ### due to dictionary usage, transformed to PB2 dictionaries with help from Mistral Le Chat
     # Convert items
@@ -127,12 +140,86 @@ def call_suggestions(card_number, order_amount):
         ]
     return result
 
+def init_fraud_detection(orderData):
+    #Initialize fraud detection
+    with grpc.insecure_channel('fraud_detection:50051') as channel:
+        stub = fraud_detection_grpc.FraudDetectionServiceStub(channel)
+        stub.InitFraudDetection(orderData)
+    
+
+def init_transaction_verification(orderData):
+    #Initialize transaction verification
+    with grpc.insecure_channel('transaction_verification:50052') as channel:
+        stub = transaction_verification_grpc.TransactionVerificationServiceStub(channel)
+        stub.InitTransactionVerification(orderData)
+    
+
+def init_suggestions(orderData):
+    #Initialize suggestions
+    with grpc.insecure_channel('suggestions:50053') as channel:
+        stub = suggestions_grpc.SuggestionsServiceStub(channel)
+        stub.InitSuggestions(orderData)
+
+def formatOrderData(service, order_id, request_data):
+    items = request_data.get("items")
+    user = request_data.get("user")
+    card = request_data.get("creditCard")
+    comment = request_data.get("userComment")
+    billing_address = request_data.get("billingAddress")
+    shipping_method = request_data.get("shippingMethod")
+    gift_wrapping = request_data.get("giftWrapping")
+    terms_accepted = request_data.get("termsAccepted")
+
+    ### due to dictionary usage, transformed to PB2 dictionaries with help from Mistral Le Chat
+    # Convert items
+    pb_items = []
+    for item in items:
+        pb_item = service.ItemData(name=item['name'], quantity=str(item['quantity']))
+        pb_items.append(pb_item)
+
+    # Convert user
+    pb_user = service.User(name=user['name'], contact=user['contact'])
+
+    # Convert credit card
+    pb_card = service.CreditCard(
+        number=card['number'],
+        expirationDate=card['expirationDate'],
+        cvv=card['cvv']
+    )
+
+    # Convert comment
+    pb_comment = service.Comment(comment=comment)
+
+    # Convert billing address
+    pb_billing_address = service.BillingAddress(
+        street=billing_address['street'],
+        city=billing_address['city'],
+        state=billing_address['state'],
+        zip=billing_address['zip'],
+        country=billing_address['country']
+    )
+
+    # Build the request
+    request_obj = service.OrderData(
+        orderId=order_id,
+        items=pb_items,
+        user=pb_user,
+        creditCard=pb_card,
+        comment=pb_comment,
+        billingAddress=pb_billing_address,
+        shippingMethod=shipping_method,
+        giftWrapping=gift_wrapping,
+        termsAccepted=terms_accepted
+    )
+    
+    return request_obj
+
 # Threading! with ThreadPoolExecutor
 from concurrent.futures import ThreadPoolExecutor
 executor = ThreadPoolExecutor(max_workers=6)
 ## asynchronously calling the services
-def async_fraud_detection(card_number, order_amount):
-    return executor.submit(call_fraud_detection, card_number, order_amount)
+def async_fraud_detection(order_id, vc): #MODIFIED
+    return executor.submit(call_fraud_detection_new, order_id, vc)
 def async_transaction_verification(items, user, card, comment, billing_address, shipping_method, gift_wrapping, terms_accepted):
     return executor.submit(call_transaction_verification, items, user, card, comment, billing_address, shipping_method, gift_wrapping, terms_accepted)
 def async_suggestions(card_number, order_amount):
@@ -180,7 +267,7 @@ def checkout():
     request_data = json.loads(request.data)
 
     items = request_data.get("items")
-    amount = sum(item["quantity"] for item in items)
+    #amount = sum(item["quantity"] for item in items)
 
     user = request_data.get("user")
     card = request_data.get("creditCard")
@@ -192,6 +279,11 @@ def checkout():
 
     logger.debug(f"Request Data: {request_data}")
 
+    #Initialize the services
+    init_fraud_detection(formatOrderData(fraud_detection, order_id, request_data))
+    init_transaction_verification(formatOrderData(transaction_verification, order_id, request_data))
+    init_suggestions(formatOrderData(suggestions, order_id, request_data))
+
     # Start async operations
     logger.info("Creating threads...")
 
@@ -201,7 +293,10 @@ def checkout():
         gift_wrapping, terms_accepted
     )
 
-    fraud_future = async_fraud_detection(card["number"], amount)
+    #Fraud detetcion has been changed
+    fraud_future = async_fraud_detection(order_id, [0, 0, 0]) #using a dummy vector clock
+    
+    
     suggestions_future = async_suggestions("123", 1)
 
     trx_response = trx_future.result()
@@ -211,7 +306,7 @@ def checkout():
     logger.info(f"Fraud detection: {fraud_response}")
 
     status = "Order Approved"
-    if not trx_response.success or fraud_response:
+    if not trx_response.success or not fraud_response.success:
         status = "Order Rejected"
 
     if status == "Order Approved":
