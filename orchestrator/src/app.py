@@ -214,17 +214,6 @@ def formatOrderData(service, order_id, request_data):
     
     return request_obj
 
-# Threading! with ThreadPoolExecutor
-from concurrent.futures import ThreadPoolExecutor
-executor = ThreadPoolExecutor(max_workers=6)
-## asynchronously calling the services
-def async_fraud_detection(order_id, vc): #MODIFIED
-    return executor.submit(call_fraud_detection_new, order_id, vc)
-def async_transaction_verification(items, user, card, comment, billing_address, shipping_method, gift_wrapping, terms_accepted):
-    return executor.submit(call_transaction_verification, items, user, card, comment, billing_address, shipping_method, gift_wrapping, terms_accepted)
-def async_suggestions(card_number, order_amount):
-    return executor.submit(call_suggestions, card_number, order_amount)
-
 
 # Helper function for enqueueing and deq-ing orders
 # Made with the help of Copilot
@@ -234,6 +223,58 @@ def call_order_queue_enqueue(order_id):
         request = order_queue.EnqueueRequest(addable_order=order_id)
         response = stub.Enqueue(request)
     return response
+
+
+# Threading! with ThreadPoolExecutor
+# and asynchronous operation with asyncio
+from concurrent.futures import ThreadPoolExecutor
+import asyncio
+executor = ThreadPoolExecutor(max_workers=10)
+loop = asyncio.new_event_loop()
+asyncio.set_event_loop(loop)
+async def run_in_thread(func, *args):
+    return await loop.run_in_executor(executor, func, *args)
+
+## asynchronously calling the services
+## Re-done with the help of Copilot for true asynch processing
+async def async_checkout_logic(order_id, request_data):
+    logger.info(f"[Async] Processing {order_id}")
+    # Init services
+    await run_in_thread(init_fraud_detection,
+                        formatOrderData(fraud_detection, order_id, request_data))
+    await run_in_thread(init_transaction_verification,
+                        formatOrderData(transaction_verification, order_id, request_data))
+    await run_in_thread(init_suggestions,
+                        formatOrderData(suggestions, order_id, request_data))
+    # Extract primary data
+    items = request_data["items"]
+    user = request_data["user"]
+    card = request_data["creditCard"]
+    comment = request_data["userComment"]
+    billing = request_data["billingAddress"]
+    shipping = request_data["shippingMethod"]
+    wrapping = request_data["giftWrapping"]
+    terms = request_data["termsAccepted"]
+    # Run 3 RPCs concurrently
+    fraud_fut = run_in_thread(call_fraud_detection_new, order_id, [0, 0, 0])
+    trx_fut = run_in_thread(call_transaction_verification, items, user, card,
+                            comment, billing, shipping, wrapping, terms)
+    sugg_fut = run_in_thread(call_suggestions, "123", 1)
+    fraud_resp, trx_resp, suggestions_resp = await asyncio.gather(
+        fraud_fut, trx_fut, sugg_fut
+    )
+    # Evaluate
+    status = "Order Approved"
+    if not trx_resp.success or not fraud_resp.success:
+        status = "Order Rejected"
+    # Enqueue only if approved
+    if status == "Order Approved":
+        await run_in_thread(call_order_queue_enqueue, order_id)
+    return {
+        "orderId": order_id,
+        "status": status,
+        "suggestedBooks": suggestions_resp,
+    }
 
 from flask import Flask, request
 from flask_cors import CORS
@@ -254,75 +295,17 @@ def index():
     response = greet(name='admin;')
     return response
 
-
-@app.route('/checkout', methods=['POST'])
+## Re-done to use asynch checkout with the help of Copilot
+@app.route("/checkout", methods=["POST"])
 def checkout():
     """
     Responds with a JSON object containing the order ID, status, and suggested books.
     """
-
     order_id = str(uuid.uuid4())
-    logger.info(f"Request ID {order_id} received")
-
-    request_data = json.loads(request.data)
-
-    items = request_data.get("items")
-    #amount = sum(item["quantity"] for item in items)
-
-    user = request_data.get("user")
-    card = request_data.get("creditCard")
-    comment = request_data.get("userComment")
-    billing_address = request_data.get("billingAddress")
-    shipping_method = request_data.get("shippingMethod")
-    gift_wrapping = request_data.get("giftWrapping")
-    terms_accepted = request_data.get("termsAccepted")
-
-    logger.debug(f"Request Data: {request_data}")
-
-    #Initialize the services
-    init_fraud_detection(formatOrderData(fraud_detection, order_id, request_data))
-    init_transaction_verification(formatOrderData(transaction_verification, order_id, request_data))
-    init_suggestions(formatOrderData(suggestions, order_id, request_data))
-
-    # Start async operations
-    logger.info("Creating threads...")
-
-    trx_future = async_transaction_verification(
-        items, user, card, comment,
-        billing_address, shipping_method,
-        gift_wrapping, terms_accepted
-    )
-
-    #Fraud detetcion has been changed
-    fraud_future = async_fraud_detection(order_id, [0, 0, 0]) #using a dummy vector clock
-    
-    
-    suggestions_future = async_suggestions("123", 1)
-
-    trx_response = trx_future.result()
-    fraud_response = fraud_future.result()
-
-    logger.info(f"Transaction verification: {trx_response}")
-    logger.info(f"Fraud detection: {fraud_response}")
-
-    status = "Order Approved"
-    if not trx_response.success or not fraud_response.success:
-        status = "Order Rejected"
-
-    if status == "Order Approved":
-        queue_response = call_order_queue_enqueue(order_id)
-        logger.info(f"Order {order_id} enqueued: {queue_response.success}")
-
-    suggestions_response = suggestions_future.result()
-    logger.info(f"Suggested book IDs: {[s['id'] for s in suggestions_response]}")
-
-    result = {
-        "orderId": order_id,
-        "status": status,
-        "suggestedBooks": suggestions_response
-    }
-
-    logger.debug(f"Response Data: {result}")
+    payload = json.loads(request.data)
+    logger.info(f"[Flask] Received order {order_id}")
+    # Synchronously block until async workflow completes
+    result = loop.run_until_complete(async_checkout_logic(order_id, payload))
     return result
 
 if __name__ == '__main__':
