@@ -20,7 +20,7 @@ import fraud_detection_pb2_grpc as fraud_detection_grpc
 import grpc
 from concurrent import futures
 from concurrent.futures import ThreadPoolExecutor, as_completed
-
+import asyncio
 
 # Create a class to define the server functions, derived from
 # fraud_detection_pb2_grpc.HelloServiceServicer
@@ -67,15 +67,17 @@ class OrderAmountChecker:
 from concurrent.futures import ThreadPoolExecutor
 executor = ThreadPoolExecutor(max_workers=6)
 ## asynchronously calling the services
+async def async_check_user_data(card_number):
+    loop = asyncio.get_running_loop()
+    return await loop.run_in_executor(None, UserDataChecker(), card_number)
 
-def async_check_user_data(card_number):
-    return executor.submit(UserDataChecker(), card_number)
+async def async_check_credit_card_data(card_number):
+    loop = asyncio.get_running_loop()
+    return await loop.run_in_executor(None, CreditCardDataChecker(), card_number)
 
-def async_check_credit_card_data(card_number):
-    return executor.submit(CreditCardDataChecker(), card_number)
-
-def async_check_order_amount(amount):
-    return executor.submit(OrderAmountChecker(), amount)
+async def async_check_order_amount(amount):
+    loop = asyncio.get_running_loop()
+    return await loop.run_in_executor(None, OrderAmountChecker(), amount)
 
 
 # This class was also remade with the help of Copilot to combine the refactored classes.
@@ -128,40 +130,45 @@ class FraudDetectionService(fraud_detection_grpc.FraudDetectionServiceServicer):
 
         return fraud_detection.FraudResponse(is_fraud=False)
 
+    # re-made with the help of Copilot for true asyncio.gather implementation
     def CheckFraudNew(self, request, context):
         order_id = request.id
         incoming_vc = request.vectorClock.timeStamp
         entry = self.orders.get(order_id)
-        self.merge_and_increment(entry['vc'], incoming_vc)
-
-        card_number = entry['data'].creditCard.number
-        order_amount = sum(int(item.quantity) for item in entry['data'].items) #quantity is a string for some reason i cannot be bothered to fix it rn
-
+        self.merge_and_increment(entry["vc"], incoming_vc)
+        card_number = entry["data"].creditCard.number
+        order_amount = sum(int(item.quantity) for item in entry["data"].items)
         logger.info(f"Checking fraud for card {card_number} and amount {order_amount}")
-
-        # Launch concurrent checks
-        tasks = {
-            async_check_user_data(card_number): "User-data check failed",
-            async_check_credit_card_data(card_number): "Credit-card check failed",
-            async_check_order_amount(order_amount): "Order-amount check failed"
-        }
-
-        fraud_detected = False
-        failure_reason = None
-
-        # Aggregate results
-        for future in as_completed(tasks):
-            ok, error = future.result()
+        async def run_checks():
+            return await asyncio.gather(
+                async_check_user_data(card_number),
+                async_check_credit_card_data(card_number),
+                async_check_order_amount(order_amount),
+                return_exceptions=True
+            )
+        results = asyncio.run(run_checks())
+        error_messages = [
+            "User-data check failed",
+            "Credit-card check failed",
+            "Order-amount check failed"
+        ]
+        for (ok, err), msg in zip(results, error_messages):
+            if isinstance(ok, Exception):
+                return fraud_detection.OrderResponse(
+                    vectorClock=fraud_detection.VectorClock(timeStamp=entry["vc"]),
+                    success=False
+                )
             if not ok:
-                fraud_detected = True
-                failure_reason = error
-                break
+                return fraud_detection.OrderResponse(
+                    vectorClock=fraud_detection.VectorClock(timeStamp=entry["vc"]),
+                    success=False
+                )
+        return fraud_detection.OrderResponse(
+            vectorClock=fraud_detection.VectorClock(timeStamp=entry["vc"]),
+            success=True
+        )
 
-        if fraud_detected:
-            logger.info(f"Fraud detected: {failure_reason}")
-            return fraud_detection.OrderResponse(vectorClock=fraud_detection.VectorClock(timeStamp=entry['vc']), success=False)
 
-        return fraud_detection.OrderResponse(vectorClock=fraud_detection.VectorClock(timeStamp=entry['vc']), success=True)
 
 def serve():
     # Create a gRPC server
