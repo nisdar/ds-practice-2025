@@ -16,6 +16,10 @@ transaction_verification_grpc_path = os.path.abspath(os.path.join(FILE, '../../.
 sys.path.insert(0, transaction_verification_grpc_path)
 import transaction_verification_pb2 as transaction_verification
 import transaction_verification_pb2_grpc as transaction_verification_grpc
+fraud_detection_grpc_path = os.path.abspath(os.path.join(FILE, '../../../utils/pb/fraud_detection'))
+sys.path.insert(0, fraud_detection_grpc_path)
+import fraud_detection_pb2 as fraud_detection
+import fraud_detection_pb2_grpc as fraud_detection_grpc
 
 import grpc
 from concurrent import futures
@@ -196,6 +200,61 @@ class TransactionVerificationService(transaction_verification_grpc.TransactionVe
                 comment="Terms of service not accepted"
             )
         return transaction_verification.VerificationResponse(success=True)
+    
+    def VerifyTransactionNew(self, request, context):
+        order_id = request.id
+        incoming_vc = request.vectorClock.timeStamp
+        entry = self.orders.get(order_id)
+        self.merge_and_increment(entry["vc"], incoming_vc)
+        logger.info(f"Checking transaction for card {entry['data'].creditCard.number} and user {entry['data'].user.name}")
+        async def run_checks():
+            return await asyncio.gather(
+                async_check_item_data(entry["data"].items),
+                async_check_user(entry["data"].user),
+                async_check_credit_card(entry["data"].creditCard),
+                async_check_comment(entry["data"].comment),
+                async_check_billing_address(entry["data"].billingAddress),
+                async_check_shipping_method(entry["data"].shippingMethod),
+                return_exceptions=True
+            )
+
+        results = asyncio.run(run_checks())
+
+        # Process results sequentially in the same order
+        error_messages = [
+            "Item validation failed",
+            "User validation failed",
+            "Credit card validation failed",
+            "Comment validation failed",
+            "Address validation failed",
+            "Shipping method invalid"
+        ]
+        #Logging could be implemented here
+        for (ok, err), msg in zip(results, error_messages):
+            if isinstance(ok, Exception):
+                return transaction_verification.OrderResponse(
+                    vectorClock=transaction_verification.VectorClock(timeStamp=entry["vc"]),
+                    success=False
+                )
+            if not ok:
+                return transaction_verification.OrderResponse(
+                    vectorClock=transaction_verification.VectorClock(timeStamp=entry["vc"]),
+                    success=False
+                )
+        if entry["data"].termsAccepted is not True:
+            return transaction_verification.OrderResponse(
+                    vectorClock=transaction_verification.VectorClock(timeStamp=entry["vc"]),
+                    success=False
+                )
+        with grpc.insecure_channel('fraud_detection:50051') as channel:
+            stub = fraud_detection_grpc.FraudDetectionServiceStub(channel)
+            request_obj = fraud_detection.OrderInfo(
+                id=order_id,
+                vectorClock=fraud_detection.VectorClock(timeStamp=entry["vc"])
+            )
+            # Call the service through the stub object.
+            response = stub.CheckFraudNew(request_obj)
+        return response
 
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor())

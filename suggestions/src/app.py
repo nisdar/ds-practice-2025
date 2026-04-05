@@ -102,6 +102,44 @@ class SuggestionsService(suggestions_grpc.SuggestionsServiceServicer):
                 ) for b in selected
             ]
         )
+
+    def SuggestBooksNew(self, request, context):
+        order_id = request.id
+        incoming_vc = request.vectorClock.timeStamp
+        entry = self.orders.get(order_id)
+        self.merge_and_increment(entry["vc"], incoming_vc)
+
+        card_number = entry["data"].creditCard.number
+        order_amount = sum(int(item.quantity) for item in entry["data"].items)
+
+        logger.info(f"Generating suggestions for {card_number}, amount {order_amount}")
+
+        # TODO this could be split into an asynchronous function call.
+        books = [
+            {"id": "1", "author": "Author 1", "title": "The Best Book"},
+            {"id": "2", "author": "Author 2", "title": "The Best Book 2"},
+            {"id": "3", "author": "Author 3", "title": "The Best Book 3"},
+            {"id": "4", "author": "Author 4", "title": "The Best Book 4"},
+            {"id": "5", "author": "Author 5", "title": "The Best Book 5"},
+            {"id": "6", "author": "Author 6", "title": "The Best Book 6"},
+        ]
+
+        # Temporary dummy logic as there is currently no inventory and no basis for suggestions
+        choose_random_number = random.randint(0, 6)
+
+        selected = books[:choose_random_number]
+        books = [
+                suggestions.Book(
+                    id=b["id"],
+                    title=b["title"],
+                    author=b["author"]
+                ) for b in selected
+            ]
+        return suggestions.OrderResponse(
+                    vectorClock=suggestions.VectorClock(timeStamp=entry["vc"]),
+                    success=True,
+                    suggestions=books
+        )
     
 def serve():
     # Create a gRPC server

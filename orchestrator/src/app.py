@@ -119,6 +119,30 @@ def call_transaction_verification(items, user, card, comment, billing_address, s
     # TODO response.comment might have not-great formatting
     return response# + " " + response.comment
 
+
+def call_transaction_verification_new(order_id, vc):
+    # Establish a connection with the fraud-detection gRPC service.
+    with grpc.insecure_channel('transaction_verification:50052') as channel:
+        # Create a stub object.
+        stub = transaction_verification_grpc.TransactionVerificationServiceStub(channel)
+        request_obj = transaction_verification.OrderInfo(
+            id=order_id,
+            vectorClock=transaction_verification.VectorClock(timeStamp=vc)
+        )
+        # Call the service through the stub object.
+        response = stub.VerifyTransactionNew(request_obj)
+    logger.debug(f"{response}, {type(response)}")
+    return {"vc": response.vectorClock,
+            "success": response.success,
+            "suggestions": [
+            {
+                "id": book.id,
+                "title": book.title,
+                "author": book.author
+            }
+            for book in response.suggestions
+        ]}
+
 def call_suggestions(card_number, order_amount):
     # Establish a connection with the suggestions gRPC service.
     with grpc.insecure_channel('suggestions:50053') as channel:
@@ -246,26 +270,12 @@ async def async_checkout_logic(order_id, request_data):
                         formatOrderData(transaction_verification, order_id, request_data))
     await run_in_thread(init_suggestions,
                         formatOrderData(suggestions, order_id, request_data))
-    # Extract primary data
-    items = request_data["items"]
-    user = request_data["user"]
-    card = request_data["creditCard"]
-    comment = request_data["userComment"]
-    billing = request_data["billingAddress"]
-    shipping = request_data["shippingMethod"]
-    wrapping = request_data["giftWrapping"]
-    terms = request_data["termsAccepted"]
     # Run 3 RPCs concurrently
-    fraud_fut = run_in_thread(call_fraud_detection_new, order_id, [0, 0, 0])
-    trx_fut = run_in_thread(call_transaction_verification, items, user, card,
-                            comment, billing, shipping, wrapping, terms)
-    sugg_fut = run_in_thread(call_suggestions, "123", 1)
-    fraud_resp, trx_resp, suggestions_resp = await asyncio.gather(
-        fraud_fut, trx_fut, sugg_fut
-    )
+    #or not
+    resp = await run_in_thread(call_transaction_verification_new, order_id, [0, 0, 0])
     # Evaluate
     status = "Order Approved"
-    if not trx_resp.success or not fraud_resp.success:
+    if not resp["success"]:
         status = "Order Rejected"
     # Enqueue only if approved
     if status == "Order Approved":
@@ -273,7 +283,7 @@ async def async_checkout_logic(order_id, request_data):
     return {
         "orderId": order_id,
         "status": status,
-        "suggestedBooks": suggestions_resp,
+        "suggestedBooks": resp["suggestions"],
     }
 
 from flask import Flask, request

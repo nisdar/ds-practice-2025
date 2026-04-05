@@ -17,6 +17,11 @@ sys.path.insert(0, fraud_detection_grpc_path)
 import fraud_detection_pb2 as fraud_detection
 import fraud_detection_pb2_grpc as fraud_detection_grpc
 
+suggestions_grpc_path = os.path.abspath(os.path.join(FILE, '../../../utils/pb/suggestions'))
+sys.path.insert(0, suggestions_grpc_path)
+import suggestions_pb2 as suggestions
+import suggestions_pb2_grpc as suggestions_grpc
+
 import grpc
 from concurrent import futures
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -163,10 +168,15 @@ class FraudDetectionService(fraud_detection_grpc.FraudDetectionServiceServicer):
                     vectorClock=fraud_detection.VectorClock(timeStamp=entry["vc"]),
                     success=False
                 )
-        return fraud_detection.OrderResponse(
-            vectorClock=fraud_detection.VectorClock(timeStamp=entry["vc"]),
-            success=True
-        )
+            
+        with grpc.insecure_channel('suggestions:50053') as channel:
+            stub = suggestions_grpc.SuggestionsServiceStub(channel)
+            request_obj = suggestions.OrderInfo(
+                id=order_id,
+                vectorClock=suggestions.VectorClock(timeStamp=entry["vc"])
+            )
+            response = stub.SuggestBooksNew(request_obj)
+        return response
 
 
 
