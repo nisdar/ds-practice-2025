@@ -21,7 +21,6 @@ import suggestions_pb2_grpc as suggestions_grpc
 import grpc
 from concurrent import futures
 
-
 # Create classes to define the server functions
 class HelloService(suggestions_grpc.HelloServiceServicer):
     def SayHello(self, request, context):
@@ -29,7 +28,6 @@ class HelloService(suggestions_grpc.HelloServiceServicer):
         response.greeting = "Hello, " + request.name
         logger.debug(response.greeting)
         return response
-
 
 def call_suggestions(card_number, order_amount):
     # Establish a connection with the suggestions gRPC service.
@@ -54,9 +52,6 @@ def call_suggestions(card_number, order_amount):
 
 from concurrent.futures import ThreadPoolExecutor
 executor = ThreadPoolExecutor(max_workers=2)
-## asynchronously calling the services
-def async_suggest():
-    return executor.submit(...)
 
 class SuggestionsService(suggestions_grpc.SuggestionsServiceServicer):
     def __init__(self, svc_idx=2, total_svcs=3):

@@ -106,24 +106,31 @@ class ShippingMethodChecker:
 
 executor = ThreadPoolExecutor(max_workers=12)
 
-def async_check_item_data(items):
-    return executor.submit(ItemDataChecker(), items)
+import asyncio
 
-def async_check_user(user):
-    return executor.submit(UserChecker(), user)
+async def async_check_item_data(items):
+    loop = asyncio.get_running_loop()
+    return await loop.run_in_executor(None, ItemDataChecker(), items)
 
-def async_check_comment(comment):
-    return executor.submit(CommentChecker(), comment)
+async def async_check_user(user):
+    loop = asyncio.get_running_loop()
+    return await loop.run_in_executor(None, UserChecker(), user)
 
-def async_check_billing_address(billing):
-    return executor.submit(BillingAddressChecker(), billing)
+async def async_check_comment(comment):
+    loop = asyncio.get_running_loop()
+    return await loop.run_in_executor(None, CommentChecker(), comment)
 
-def async_check_credit_card(card):
-    return executor.submit(CreditCardChecker(), card)
+async def async_check_billing_address(billing):
+    loop = asyncio.get_running_loop()
+    return await loop.run_in_executor(None, BillingAddressChecker(), billing)
 
-def async_check_shipping_method(method):
-    return executor.submit(ShippingMethodChecker(), method)
+async def async_check_credit_card(card):
+    loop = asyncio.get_running_loop()
+    return await loop.run_in_executor(None, CreditCardChecker(), card)
 
+async def async_check_shipping_method(method):
+    loop = asyncio.get_running_loop()
+    return await loop.run_in_executor(None, ShippingMethodChecker(), method)
 
 # This class was also remade with the help of Copilot to combine the refactored classes.
 class TransactionVerificationService(transaction_verification_grpc.TransactionVerificationServiceServicer):
@@ -149,35 +156,45 @@ class TransactionVerificationService(transaction_verification_grpc.TransactionVe
         return Empty()
 
     def VerifyTransaction(self, request, context):
-
         logger.info(f"Checking transaction for card {request.creditCard.number} and user {request.user.name}")
+        async def run_checks():
+            return await asyncio.gather(
+                async_check_item_data(request.items),
+                async_check_user(request.user),
+                async_check_credit_card(request.creditCard),
+                async_check_comment(request.comment),
+                async_check_billing_address(request.billingAddress),
+                async_check_shipping_method(request.shippingMethod),
+                return_exceptions=True
+            )
 
-        # Submit checks concurrently
-        tasks = {
-            async_check_item_data(request.items): "Item validation failed",
-            async_check_user(request.user): "User validation failed",
-            async_check_credit_card(request.creditCard): "Credit card validation failed",
-            async_check_comment(request.comment): "Comment validation failed",
-            async_check_billing_address(request.billingAddress): "Address validation failed",
-            async_check_shipping_method(request.shippingMethod): "Shipping method invalid"
-        }
+        results = asyncio.run(run_checks())
 
-        # Process completed tasks
-        for future in as_completed(tasks):
-            ok, error = future.result()
+        # Process results sequentially in the same order
+        error_messages = [
+            "Item validation failed",
+            "User validation failed",
+            "Credit card validation failed",
+            "Comment validation failed",
+            "Address validation failed",
+            "Shipping method invalid"
+        ]
+        for (ok, err), msg in zip(results, error_messages):
+            if isinstance(ok, Exception):
+                return transaction_verification.VerificationResponse(
+                    success=False,
+                    comment=str(ok)
+                )
             if not ok:
                 return transaction_verification.VerificationResponse(
                     success=False,
-                    comment=error
+                    comment=err or msg
                 )
-
-        # Terms & conditions check
         if request.termsAccepted is not True:
             return transaction_verification.VerificationResponse(
                 success=False,
                 comment="Terms of service not accepted"
             )
-
         return transaction_verification.VerificationResponse(success=True)
 
 def serve():
