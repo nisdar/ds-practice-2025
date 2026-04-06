@@ -45,6 +45,8 @@ def greet(name='admin'):
         suggestions_response = suggestions_stub.SayHello(suggestions.HelloRequest(name=name))
     return f"Fraud_detection: {fraud_response.greeting} Transaction_verification: {transaction_response.greeting} Suggestions: {suggestions_response.greeting}"
 
+# This currently needs to stay here as transaction_verification gets an actual call
+## however, this should be combined into the Init for transaction_verification
 def call_transaction_verification(order_id, vc):
     # Establish a connection with the fraud-detection gRPC service.
     with grpc.insecure_channel('transaction_verification:50052') as channel:
@@ -174,8 +176,8 @@ async def async_checkout_logic(order_id, request_data):
                         formatOrderData(transaction_verification, order_id, request_data))
     await run_in_thread(init_suggestions,
                         formatOrderData(suggestions, order_id, request_data))
-    # Run 3 RPCs concurrently
-    #or not
+    # Begin the transaction_verification chain
+    ## This could be combined with the init_transaction_verification maybe
     resp = await run_in_thread(call_transaction_verification, order_id, [0, 0, 0])
     # Evaluate
     status = "Order Approved"

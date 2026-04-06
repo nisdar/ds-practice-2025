@@ -107,9 +107,6 @@ class ShippingMethodChecker:
             return False, "Invalid shipping method"
         return True, None
 
-
-executor = ThreadPoolExecutor(max_workers=12)
-
 import asyncio
 
 async def async_check_item_data(items):

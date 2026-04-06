@@ -66,18 +66,6 @@ class QueueStorage:
             logger.debug(f"Queue read: {self._queue}")
             return list(self._queue)
 
-executor = ThreadPoolExecutor(max_workers=6)
-
-def async_enqueue(queue_storage, order_id):
-    return executor.submit(queue_storage.enqueue, order_id)
-
-def async_dequeue(queue_storage):
-    return executor.submit(queue_storage.dequeue)
-
-def async_get_queue(queue_storage):
-    return executor.submit(queue_storage.get_queue)
-
-
 # This class was made with the help of Copilot from the skeleton code.
 class OrderQueueService(order_queue_grpc.OrderQueueServiceServicer):
     def __init__(self, svc_idx=0, total_svcs=3):
