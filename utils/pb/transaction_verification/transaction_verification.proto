@@ -5,29 +5,9 @@ package transaction_verification;
 import "google/protobuf/empty.proto";
 
 service TransactionVerificationService {
-    rpc VerifyTransaction (VerificationRequest) returns (VerificationResponse);
-    rpc VerifyTransactionNew (OrderInfo) returns (OrderResponse);
+    rpc VerifyTransaction (OrderInfo) returns (OrderResponse);
     rpc InitTransactionVerification (OrderData) returns (google.protobuf.Empty);
 }
-
-message VerificationRequest {
-    repeated ItemData items = 1;
-    User user = 2;
-    CreditCard creditCard = 3;
-    Comment comment = 4;
-    BillingAddress billingAddress = 5;
-    string shippingMethod = 6;
-    bool giftWrapping = 7;
-    bool termsAccepted = 8;
-}
-
-message VerificationResponse {
-    bool success = 1;
-    optional string comment = 2;
-}
-
-
-
 
 message CreditCard {
     string number = 1;

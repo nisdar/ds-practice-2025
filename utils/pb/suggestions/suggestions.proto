@@ -6,23 +6,9 @@ import "google/protobuf/empty.proto";
 
 
 service SuggestionsService {
-    rpc SuggestBooks (SuggestionRequest) returns (SuggestionResponse);
-    rpc SuggestBooksNew (OrderInfo) returns (OrderResponse);
+    rpc SuggestBooks (OrderInfo) returns (OrderResponse);
     rpc InitSuggestions (OrderData) returns (google.protobuf.Empty);
 }
-
-
-message SuggestionRequest {
-    string card_number = 1;
-    float order_amount = 2;
-}
-
-message SuggestionResponse {
-    repeated Book books = 1;
-}
-
-
-
 
 
 message CreditCard {

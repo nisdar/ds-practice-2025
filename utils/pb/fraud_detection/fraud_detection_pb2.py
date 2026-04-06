@@ -25,45 +25,41 @@ _sym_db = _symbol_database.Default()
 from google.protobuf import empty_pb2 as google_dot_protobuf_dot_empty__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x15\x66raud_detection.proto\x12\x0f\x66raud_detection\x1a\x1bgoogle/protobuf/empty.proto\"9\n\x0c\x46raudRequest\x12\x13\n\x0b\x63\x61rd_number\x18\x01 \x01(\t\x12\x14\n\x0corder_amount\x18\x02 \x01(\x02\"!\n\rFraudResponse\x12\x10\n\x08is_fraud\x18\x01 \x01(\x08\"A\n\nCreditCard\x12\x0e\n\x06number\x18\x01 \x01(\t\x12\x16\n\x0e\x65xpirationDate\x18\x02 \x01(\t\x12\x0b\n\x03\x63vv\x18\x03 \x01(\t\"[\n\x0e\x42illingAddress\x12\x0e\n\x06street\x18\x01 \x01(\t\x12\x0c\n\x04\x63ity\x18\x02 \x01(\t\x12\r\n\x05state\x18\x03 \x01(\t\x12\x0b\n\x03zip\x18\x04 \x01(\t\x12\x0f\n\x07\x63ountry\x18\x05 \x01(\t\"%\n\x04User\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0f\n\x07\x63ontact\x18\x02 \x01(\t\"J\n\tOrderInfo\x12\n\n\x02id\x18\x01 \x01(\t\x12\x31\n\x0bvectorClock\x18\x02 \x01(\x0b\x32\x1c.fraud_detection.VectorClock\"*\n\x08ItemData\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x10\n\x08quantity\x18\x02 \x01(\t\"\xc5\x02\n\tOrderData\x12\x0f\n\x07orderId\x18\x01 \x01(\t\x12(\n\x05items\x18\x02 \x03(\x0b\x32\x19.fraud_detection.ItemData\x12#\n\x04user\x18\x03 \x01(\x0b\x32\x15.fraud_detection.User\x12/\n\ncreditCard\x18\x04 \x01(\x0b\x32\x1b.fraud_detection.CreditCard\x12)\n\x07\x63omment\x18\x05 \x01(\x0b\x32\x18.fraud_detection.Comment\x12\x37\n\x0e\x62illingAddress\x18\x06 \x01(\x0b\x32\x1f.fraud_detection.BillingAddress\x12\x16\n\x0eshippingMethod\x18\x07 \x01(\t\x12\x14\n\x0cgiftWrapping\x18\x08 \x01(\x08\x12\x15\n\rtermsAccepted\x18\t \x01(\x08\" \n\x0bVectorClock\x12\x11\n\ttimeStamp\x18\x01 \x03(\x05\"1\n\x04\x42ook\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0e\n\x06\x61uthor\x18\x02 \x01(\t\x12\r\n\x05title\x18\x03 \x01(\t\"\x1a\n\x07\x43omment\x12\x0f\n\x07\x63omment\x18\x01 \x01(\t\"\x13\n\x11\x43learDataResponse\"\x7f\n\rOrderResponse\x12\x31\n\x0bvectorClock\x18\x01 \x01(\x0b\x32\x1c.fraud_detection.VectorClock\x12\x0f\n\x07success\x18\x02 \x01(\x08\x12*\n\x0bsuggestions\x18\x03 \x03(\x0b\x32\x15.fraud_detection.Book\"\x1c\n\x0cHelloRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\"!\n\rHelloResponse\x12\x10\n\x08greeting\x18\x01 \x01(\t2\xfb\x01\n\x15\x46raudDetectionService\x12K\n\nCheckFraud\x12\x1d.fraud_detection.FraudRequest\x1a\x1e.fraud_detection.FraudResponse\x12K\n\rCheckFraudNew\x12\x1a.fraud_detection.OrderInfo\x1a\x1e.fraud_detection.OrderResponse\x12H\n\x12InitFraudDetection\x12\x1a.fraud_detection.OrderData\x1a\x16.google.protobuf.Empty2Y\n\x0cHelloService\x12I\n\x08SayHello\x12\x1d.fraud_detection.HelloRequest\x1a\x1e.fraud_detection.HelloResponseb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x15\x66raud_detection.proto\x12\x0f\x66raud_detection\x1a\x1bgoogle/protobuf/empty.proto\"A\n\nCreditCard\x12\x0e\n\x06number\x18\x01 \x01(\t\x12\x16\n\x0e\x65xpirationDate\x18\x02 \x01(\t\x12\x0b\n\x03\x63vv\x18\x03 \x01(\t\"[\n\x0e\x42illingAddress\x12\x0e\n\x06street\x18\x01 \x01(\t\x12\x0c\n\x04\x63ity\x18\x02 \x01(\t\x12\r\n\x05state\x18\x03 \x01(\t\x12\x0b\n\x03zip\x18\x04 \x01(\t\x12\x0f\n\x07\x63ountry\x18\x05 \x01(\t\"%\n\x04User\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0f\n\x07\x63ontact\x18\x02 \x01(\t\"J\n\tOrderInfo\x12\n\n\x02id\x18\x01 \x01(\t\x12\x31\n\x0bvectorClock\x18\x02 \x01(\x0b\x32\x1c.fraud_detection.VectorClock\"*\n\x08ItemData\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x10\n\x08quantity\x18\x02 \x01(\t\"\xc5\x02\n\tOrderData\x12\x0f\n\x07orderId\x18\x01 \x01(\t\x12(\n\x05items\x18\x02 \x03(\x0b\x32\x19.fraud_detection.ItemData\x12#\n\x04user\x18\x03 \x01(\x0b\x32\x15.fraud_detection.User\x12/\n\ncreditCard\x18\x04 \x01(\x0b\x32\x1b.fraud_detection.CreditCard\x12)\n\x07\x63omment\x18\x05 \x01(\x0b\x32\x18.fraud_detection.Comment\x12\x37\n\x0e\x62illingAddress\x18\x06 \x01(\x0b\x32\x1f.fraud_detection.BillingAddress\x12\x16\n\x0eshippingMethod\x18\x07 \x01(\t\x12\x14\n\x0cgiftWrapping\x18\x08 \x01(\x08\x12\x15\n\rtermsAccepted\x18\t \x01(\x08\" \n\x0bVectorClock\x12\x11\n\ttimeStamp\x18\x01 \x03(\x05\"1\n\x04\x42ook\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0e\n\x06\x61uthor\x18\x02 \x01(\t\x12\r\n\x05title\x18\x03 \x01(\t\"\x1a\n\x07\x43omment\x12\x0f\n\x07\x63omment\x18\x01 \x01(\t\"\x13\n\x11\x43learDataResponse\"\x7f\n\rOrderResponse\x12\x31\n\x0bvectorClock\x18\x01 \x01(\x0b\x32\x1c.fraud_detection.VectorClock\x12\x0f\n\x07success\x18\x02 \x01(\x08\x12*\n\x0bsuggestions\x18\x03 \x03(\x0b\x32\x15.fraud_detection.Book\"\x1c\n\x0cHelloRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\"!\n\rHelloResponse\x12\x10\n\x08greeting\x18\x01 \x01(\t2\xab\x01\n\x15\x46raudDetectionService\x12H\n\nCheckFraud\x12\x1a.fraud_detection.OrderInfo\x1a\x1e.fraud_detection.OrderResponse\x12H\n\x12InitFraudDetection\x12\x1a.fraud_detection.OrderData\x1a\x16.google.protobuf.Empty2Y\n\x0cHelloService\x12I\n\x08SayHello\x12\x1d.fraud_detection.HelloRequest\x1a\x1e.fraud_detection.HelloResponseb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'fraud_detection_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
-  _globals['_FRAUDREQUEST']._serialized_start=71
-  _globals['_FRAUDREQUEST']._serialized_end=128
-  _globals['_FRAUDRESPONSE']._serialized_start=130
-  _globals['_FRAUDRESPONSE']._serialized_end=163
-  _globals['_CREDITCARD']._serialized_start=165
-  _globals['_CREDITCARD']._serialized_end=230
-  _globals['_BILLINGADDRESS']._serialized_start=232
-  _globals['_BILLINGADDRESS']._serialized_end=323
-  _globals['_USER']._serialized_start=325
-  _globals['_USER']._serialized_end=362
-  _globals['_ORDERINFO']._serialized_start=364
-  _globals['_ORDERINFO']._serialized_end=438
-  _globals['_ITEMDATA']._serialized_start=440
-  _globals['_ITEMDATA']._serialized_end=482
-  _globals['_ORDERDATA']._serialized_start=485
-  _globals['_ORDERDATA']._serialized_end=810
-  _globals['_VECTORCLOCK']._serialized_start=812
-  _globals['_VECTORCLOCK']._serialized_end=844
-  _globals['_BOOK']._serialized_start=846
-  _globals['_BOOK']._serialized_end=895
-  _globals['_COMMENT']._serialized_start=897
-  _globals['_COMMENT']._serialized_end=923
-  _globals['_CLEARDATARESPONSE']._serialized_start=925
-  _globals['_CLEARDATARESPONSE']._serialized_end=944
-  _globals['_ORDERRESPONSE']._serialized_start=946
-  _globals['_ORDERRESPONSE']._serialized_end=1073
-  _globals['_HELLOREQUEST']._serialized_start=1075
-  _globals['_HELLOREQUEST']._serialized_end=1103
-  _globals['_HELLORESPONSE']._serialized_start=1105
-  _globals['_HELLORESPONSE']._serialized_end=1138
-  _globals['_FRAUDDETECTIONSERVICE']._serialized_start=1141
-  _globals['_FRAUDDETECTIONSERVICE']._serialized_end=1392
-  _globals['_HELLOSERVICE']._serialized_start=1394
-  _globals['_HELLOSERVICE']._serialized_end=1483
+  _globals['_CREDITCARD']._serialized_start=71
+  _globals['_CREDITCARD']._serialized_end=136
+  _globals['_BILLINGADDRESS']._serialized_start=138
+  _globals['_BILLINGADDRESS']._serialized_end=229
+  _globals['_USER']._serialized_start=231
+  _globals['_USER']._serialized_end=268
+  _globals['_ORDERINFO']._serialized_start=270
+  _globals['_ORDERINFO']._serialized_end=344
+  _globals['_ITEMDATA']._serialized_start=346
+  _globals['_ITEMDATA']._serialized_end=388
+  _globals['_ORDERDATA']._serialized_start=391
+  _globals['_ORDERDATA']._serialized_end=716
+  _globals['_VECTORCLOCK']._serialized_start=718
+  _globals['_VECTORCLOCK']._serialized_end=750
+  _globals['_BOOK']._serialized_start=752
+  _globals['_BOOK']._serialized_end=801
+  _globals['_COMMENT']._serialized_start=803
+  _globals['_COMMENT']._serialized_end=829
+  _globals['_CLEARDATARESPONSE']._serialized_start=831
+  _globals['_CLEARDATARESPONSE']._serialized_end=850
+  _globals['_ORDERRESPONSE']._serialized_start=852
+  _globals['_ORDERRESPONSE']._serialized_end=979
+  _globals['_HELLOREQUEST']._serialized_start=981
+  _globals['_HELLOREQUEST']._serialized_end=1009
+  _globals['_HELLORESPONSE']._serialized_start=1011
+  _globals['_HELLORESPONSE']._serialized_end=1044
+  _globals['_FRAUDDETECTIONSERVICE']._serialized_start=1047
+  _globals['_FRAUDDETECTIONSERVICE']._serialized_end=1218
+  _globals['_HELLOSERVICE']._serialized_start=1220
+  _globals['_HELLOSERVICE']._serialized_end=1309
 # @@protoc_insertion_point(module_scope)

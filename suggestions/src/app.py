@@ -29,29 +29,7 @@ class HelloService(suggestions_grpc.HelloServiceServicer):
         logger.debug(response.greeting)
         return response
 
-def call_suggestions(card_number, order_amount):
-    # Establish a connection with the suggestions gRPC service.
-    with grpc.insecure_channel('suggestions:50053') as channel:
-        # Create a stub object.
-        stub = suggestions_grpc.SuggestionsServiceStub(channel)
-        request_obj = suggestions.SuggestionRequest(card_number=card_number, order_amount=order_amount)
-        # Call the service through the stub object.
-        response = stub.SuggestBooks(request_obj)
-
-        books_list = []
-
-        result = [
-            {
-                "id": book.id,
-                "title": book.title,
-                "author": book.author
-            }
-            for book in response.books
-        ]
-    return result
-
 from concurrent.futures import ThreadPoolExecutor
-executor = ThreadPoolExecutor(max_workers=2)
 
 class SuggestionsService(suggestions_grpc.SuggestionsServiceServicer):
     def __init__(self, svc_idx=2, total_svcs=3):
@@ -75,7 +53,7 @@ class SuggestionsService(suggestions_grpc.SuggestionsServiceServicer):
         self.orders[order_id] = {"data" : request, "vc": [0] * self.total_svcs}
         return Empty()
 
-    def SuggestBooksNew(self, request, context):
+    def SuggestBooks(self, request, context):
         order_id = request.id
         incoming_vc = list(request.vectorClock.timeStamp)  # ← convert to list
         entry = self.orders.get(order_id)

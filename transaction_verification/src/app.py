@@ -107,9 +107,6 @@ class ShippingMethodChecker:
             return False, "Invalid shipping method"
         return True, None
 
-
-executor = ThreadPoolExecutor(max_workers=12)
-
 import asyncio
 
 async def async_check_item_data(items):
@@ -162,7 +159,7 @@ class TransactionVerificationService(transaction_verification_grpc.TransactionVe
         self.orders[order_id] = {"data" : request, "vc": [0] * self.total_svcs}
         return Empty()
     
-    def VerifyTransactionNew(self, request, context):
+    def VerifyTransaction(self, request, context):
         order_id = request.id
         incoming_vc = list(request.vectorClock.timeStamp)
         entry = self.orders.get(order_id)
@@ -225,10 +222,11 @@ class TransactionVerificationService(transaction_verification_grpc.TransactionVe
         # Forward to fraud_detection, passing the vector clock
         # fraud_detection will call suggestions, which returns the final response
         self.increment(entry["vc"])
+        logger.info(f"VC after final increment: {entry['vc']}")
 
         with grpc.insecure_channel('fraud_detection:50051') as channel:
             stub = fraud_detection_grpc.FraudDetectionServiceStub(channel)
-            response = stub.CheckFraudNew(fraud_detection.OrderInfo(
+            response = stub.CheckFraud(fraud_detection.OrderInfo(
                 id=order_id,
                 vectorClock=fraud_detection.VectorClock(timeStamp=entry["vc"])
             ))
