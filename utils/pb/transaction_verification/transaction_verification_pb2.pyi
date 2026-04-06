@@ -7,34 +7,6 @@ from typing import ClassVar as _ClassVar, Optional as _Optional, Union as _Union
 
 DESCRIPTOR: _descriptor.FileDescriptor
 
-class VerificationRequest(_message.Message):
-    __slots__ = ("items", "user", "creditCard", "comment", "billingAddress", "shippingMethod", "giftWrapping", "termsAccepted")
-    ITEMS_FIELD_NUMBER: _ClassVar[int]
-    USER_FIELD_NUMBER: _ClassVar[int]
-    CREDITCARD_FIELD_NUMBER: _ClassVar[int]
-    COMMENT_FIELD_NUMBER: _ClassVar[int]
-    BILLINGADDRESS_FIELD_NUMBER: _ClassVar[int]
-    SHIPPINGMETHOD_FIELD_NUMBER: _ClassVar[int]
-    GIFTWRAPPING_FIELD_NUMBER: _ClassVar[int]
-    TERMSACCEPTED_FIELD_NUMBER: _ClassVar[int]
-    items: _containers.RepeatedCompositeFieldContainer[ItemData]
-    user: User
-    creditCard: CreditCard
-    comment: Comment
-    billingAddress: BillingAddress
-    shippingMethod: str
-    giftWrapping: bool
-    termsAccepted: bool
-    def __init__(self, items: _Optional[_Iterable[_Union[ItemData, _Mapping]]] = ..., user: _Optional[_Union[User, _Mapping]] = ..., creditCard: _Optional[_Union[CreditCard, _Mapping]] = ..., comment: _Optional[_Union[Comment, _Mapping]] = ..., billingAddress: _Optional[_Union[BillingAddress, _Mapping]] = ..., shippingMethod: _Optional[str] = ..., giftWrapping: bool = ..., termsAccepted: bool = ...) -> None: ...
-
-class VerificationResponse(_message.Message):
-    __slots__ = ("success", "comment")
-    SUCCESS_FIELD_NUMBER: _ClassVar[int]
-    COMMENT_FIELD_NUMBER: _ClassVar[int]
-    success: bool
-    comment: str
-    def __init__(self, success: bool = ..., comment: _Optional[str] = ...) -> None: ...
-
 class CreditCard(_message.Message):
     __slots__ = ("number", "expirationDate", "cvv")
     NUMBER_FIELD_NUMBER: _ClassVar[int]

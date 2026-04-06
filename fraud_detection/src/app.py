@@ -24,7 +24,6 @@ import suggestions_pb2_grpc as suggestions_grpc
 
 import grpc
 from concurrent import futures
-from concurrent.futures import ThreadPoolExecutor, as_completed
 import asyncio
 
 # Create a class to define the server functions, derived from
@@ -106,7 +105,7 @@ class FraudDetectionService(fraud_detection_grpc.FraudDetectionServiceServicer):
     def increment(self, local_vc):          # ← must be indented inside class
         local_vc[self.svc_idx] += 1
 
-    def CheckFraudNew(self, request, context):
+    def CheckFraud(self, request, context):
         order_id = request.id
         incoming_vc = list(request.vectorClock.timeStamp)
         entry = self.orders.get(order_id)
@@ -154,7 +153,7 @@ class FraudDetectionService(fraud_detection_grpc.FraudDetectionServiceServicer):
 
         with grpc.insecure_channel('suggestions:50053') as channel:
             stub = suggestions_grpc.SuggestionsServiceStub(channel)
-            response = stub.SuggestBooksNew(suggestions.OrderInfo(
+            response = stub.SuggestBooks(suggestions.OrderInfo(
                 id=order_id,
                 vectorClock=suggestions.VectorClock(timeStamp=entry["vc"])
             ))
