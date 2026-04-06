@@ -159,11 +159,10 @@ def call_order_queue_enqueue(order_id):
 # and asynchronous operation with asyncio
 from concurrent.futures import ThreadPoolExecutor
 import asyncio
-executor = ThreadPoolExecutor(max_workers=10)
 loop = asyncio.new_event_loop()
 asyncio.set_event_loop(loop)
 async def run_in_thread(func, *args):
-    return await loop.run_in_executor(executor, func, *args)
+    return await loop.run_in_executor(None, func, *args)
 
 ## asynchronously calling the services
 ## Re-done with the help of Copilot for true asynch processing

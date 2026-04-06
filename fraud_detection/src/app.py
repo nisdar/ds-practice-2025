@@ -69,7 +69,6 @@ class OrderAmountChecker:
 
 
 from concurrent.futures import ThreadPoolExecutor
-executor = ThreadPoolExecutor(max_workers=6)
 ## asynchronously calling the services
 async def async_check_user_data(card_number):
     loop = asyncio.get_running_loop()
