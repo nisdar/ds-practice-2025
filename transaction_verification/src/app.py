@@ -138,7 +138,7 @@ async def async_check_shipping_method(method):
 
 # This class was also remade with the help of Copilot to combine the refactored classes.
 class TransactionVerificationService(transaction_verification_grpc.TransactionVerificationServiceServicer):
-    def __init__(self, svc_idx=1, total_svcs=3):
+    def __init__(self, svc_idx=0, total_svcs=3):
         self.svc_idx = svc_idx
         self.total_svcs = total_svcs
         self.orders = {}
@@ -153,107 +153,85 @@ class TransactionVerificationService(transaction_verification_grpc.TransactionVe
         for i in range(self.total_svcs):
             local_vc[i] = max(local_vc[i], incoming_vc[i])
         local_vc[self.svc_idx] += 1
+    
+    def increment(self, local_vc):
+        local_vc[self.svc_idx] += 1
 
     def InitTransactionVerification(self, request, context):
         order_id = request.orderId
         self.orders[order_id] = {"data" : request, "vc": [0] * self.total_svcs}
         return Empty()
-
-    def VerifyTransaction(self, request, context):
-        logger.info(f"Checking transaction for card {request.creditCard.number} and user {request.user.name}")
-        async def run_checks():
-            return await asyncio.gather(
-                async_check_item_data(request.items),
-                async_check_user(request.user),
-                async_check_credit_card(request.creditCard),
-                async_check_comment(request.comment),
-                async_check_billing_address(request.billingAddress),
-                async_check_shipping_method(request.shippingMethod),
-                return_exceptions=True
-            )
-
-        results = asyncio.run(run_checks())
-
-        # Process results sequentially in the same order
-        error_messages = [
-            "Item validation failed",
-            "User validation failed",
-            "Credit card validation failed",
-            "Comment validation failed",
-            "Address validation failed",
-            "Shipping method invalid"
-        ]
-        for (ok, err), msg in zip(results, error_messages):
-            if isinstance(ok, Exception):
-                return transaction_verification.VerificationResponse(
-                    success=False,
-                    comment=str(ok)
-                )
-            if not ok:
-                return transaction_verification.VerificationResponse(
-                    success=False,
-                    comment=err or msg
-                )
-        if request.termsAccepted is not True:
-            return transaction_verification.VerificationResponse(
-                success=False,
-                comment="Terms of service not accepted"
-            )
-        return transaction_verification.VerificationResponse(success=True)
     
     def VerifyTransactionNew(self, request, context):
         order_id = request.id
-        incoming_vc = request.vectorClock.timeStamp
+        incoming_vc = list(request.vectorClock.timeStamp)
         entry = self.orders.get(order_id)
         self.merge_and_increment(entry["vc"], incoming_vc)
-        logger.info(f"Checking transaction for card {entry['data'].creditCard.number} and user {entry['data'].user.name}")
+
+        data = entry["data"]
+
         async def run_checks():
-            return await asyncio.gather(
-                async_check_item_data(entry["data"].items),
-                async_check_user(entry["data"].user),
-                async_check_credit_card(entry["data"].creditCard),
-                async_check_comment(entry["data"].comment),
-                async_check_billing_address(entry["data"].billingAddress),
-                async_check_shipping_method(entry["data"].shippingMethod),
-                return_exceptions=True
+            # Round 1: a and b run in parallel
+            result_a, result_b = await asyncio.gather(
+                async_check_item_data(data.items),   # event a
+                async_check_user(data.user),          # event b
             )
+            self.increment(entry["vc"])  # tick for event a
+            self.increment(entry["vc"])  # tick for event b
 
-        results = asyncio.run(run_checks())
+            # Check a before proceeding to c
+            ok_a, err_a = result_a
+            if not ok_a:
+                return None, err_a or "Item validation failed"
 
-        # Process results sequentially in the same order
-        error_messages = [
-            "Item validation failed",
-            "User validation failed",
-            "Credit card validation failed",
-            "Comment validation failed",
-            "Address validation failed",
-            "Shipping method invalid"
-        ]
-        #Logging could be implemented here
-        for (ok, err), msg in zip(results, error_messages):
-            if isinstance(ok, Exception):
-                return transaction_verification.OrderResponse(
-                    vectorClock=transaction_verification.VectorClock(timeStamp=entry["vc"]),
-                    success=False
-                )
-            if not ok:
-                return transaction_verification.OrderResponse(
-                    vectorClock=transaction_verification.VectorClock(timeStamp=entry["vc"]),
-                    success=False
-                )
-        if entry["data"].termsAccepted is not True:
-            return transaction_verification.OrderResponse(
-                    vectorClock=transaction_verification.VectorClock(timeStamp=entry["vc"]),
-                    success=False
-                )
+            # Round 2: c (needs a) and d-trigger (needs b) run in parallel
+            # c = card format check, b's result gates fraud_detection's d
+            ok_b, err_b = result_b
+            
+            result_c, result_comment, result_addr, result_ship = await asyncio.gather(
+                async_check_credit_card(data.creditCard),      # event c (after a)
+                async_check_comment(data.comment),
+                async_check_billing_address(data.billingAddress),
+                async_check_shipping_method(data.shippingMethod),
+            )
+            self.increment(entry["vc"])  # tick for event c
+
+            # b must pass before d can run (d is in fraud_detection)
+            if not ok_b:
+                return None, err_b or "User validation failed"
+
+            for (ok, err), msg in zip(
+                [result_c, result_comment, result_addr, result_ship],
+                ["Credit card invalid", "Comment invalid", "Address invalid", "Shipping invalid"]
+            ):
+                if not ok:
+                    return None, err or msg
+
+            return True, None
+
+        success, error = asyncio.run(run_checks())
+
+        fail_response = transaction_verification.OrderResponse(
+            vectorClock=transaction_verification.VectorClock(timeStamp=entry["vc"]),
+            success=False
+        )
+
+        if not success:
+            return fail_response
+
+        if data.termsAccepted is not True:
+            return fail_response
+
+        # Forward to fraud_detection, passing the vector clock
+        # fraud_detection will call suggestions, which returns the final response
+        self.increment(entry["vc"])
+
         with grpc.insecure_channel('fraud_detection:50051') as channel:
             stub = fraud_detection_grpc.FraudDetectionServiceStub(channel)
-            request_obj = fraud_detection.OrderInfo(
+            response = stub.CheckFraudNew(fraud_detection.OrderInfo(
                 id=order_id,
                 vectorClock=fraud_detection.VectorClock(timeStamp=entry["vc"])
-            )
-            # Call the service through the stub object.
-            response = stub.CheckFraudNew(request_obj)
+            ))
         return response
 
 def serve():
