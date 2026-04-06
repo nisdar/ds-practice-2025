@@ -30,7 +30,6 @@ class HelloService(suggestions_grpc.HelloServiceServicer):
         return response
 
 from concurrent.futures import ThreadPoolExecutor
-executor = ThreadPoolExecutor(max_workers=2)
 
 class SuggestionsService(suggestions_grpc.SuggestionsServiceServicer):
     def __init__(self, svc_idx=2, total_svcs=3):
