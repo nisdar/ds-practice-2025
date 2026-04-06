@@ -66,19 +66,25 @@ class SuggestionsService(suggestions_grpc.SuggestionsServiceServicer):
         for i in range(self.total_svcs):
             local_vc[i] = max(local_vc[i], incoming_vc[i])
         local_vc[self.svc_idx] += 1
+        
+    def increment(self, local_vc):          # ← must be indented inside class
+        local_vc[self.svc_idx] += 1
     
     def InitSuggestions(self, request, context):
         order_id = request.orderId
         self.orders[order_id] = {"data" : request, "vc": [0] * self.total_svcs}
         return Empty()
 
-    def SuggestBooks(self, request, context):
-        card_number = request.card_number
-        order_amount = request.order_amount
+    def SuggestBooksNew(self, request, context):
+        order_id = request.id
+        incoming_vc = list(request.vectorClock.timeStamp)  # ← convert to list
+        entry = self.orders.get(order_id)
+        
+        # Merge fraud_detection's clock (which already carries TV's history)
+        self.merge_and_increment(entry["vc"], incoming_vc)
+        
+        logger.info(f"Generating suggestions for order {order_id}, vc={entry['vc']}")
 
-        logger.info(f"Generating suggestions for {card_number}, amount {order_amount}")
-
-        # TODO this could be split into an asynchronous function call.
         books = [
             {"id": "1", "author": "Author 1", "title": "The Best Book"},
             {"id": "2", "author": "Author 2", "title": "The Best Book 2"},
@@ -88,18 +94,21 @@ class SuggestionsService(suggestions_grpc.SuggestionsServiceServicer):
             {"id": "6", "author": "Author 6", "title": "The Best Book 6"},
         ]
 
-        # Temporary dummy logic as there is currently no inventory and no basis for suggestions
-        choose_random_number = random.randint(0, 6)
-
+        choose_random_number = random.randint(1, 6)  # ← min 1 so you always get results
         selected = books[:choose_random_number]
 
-        return suggestions.SuggestionResponse(
-            books = [
-                suggestions.Book(
-                    id=b["id"],
-                    title=b["title"],
-                    author=b["author"]
-                ) for b in selected
+        # Tick 2: event f completes
+        self.increment(entry["vc"])
+        
+        # Tick 3: send final response
+        self.increment(entry["vc"])
+
+        return suggestions.OrderResponse(
+            vectorClock=suggestions.VectorClock(timeStamp=entry["vc"]),
+            success=True,
+            suggestions=[
+                suggestions.Book(id=b["id"], title=b["title"], author=b["author"])
+                for b in selected
             ]
         )
     

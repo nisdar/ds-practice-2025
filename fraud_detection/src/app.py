@@ -17,6 +17,11 @@ sys.path.insert(0, fraud_detection_grpc_path)
 import fraud_detection_pb2 as fraud_detection
 import fraud_detection_pb2_grpc as fraud_detection_grpc
 
+suggestions_grpc_path = os.path.abspath(os.path.join(FILE, '../../../utils/pb/suggestions'))
+sys.path.insert(0, suggestions_grpc_path)
+import suggestions_pb2 as suggestions
+import suggestions_pb2_grpc as suggestions_grpc
+
 import grpc
 from concurrent import futures
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -82,92 +87,78 @@ async def async_check_order_amount(amount):
 
 # This class was also remade with the help of Copilot to combine the refactored classes.
 class FraudDetectionService(fraud_detection_grpc.FraudDetectionServiceServicer):
-    def __init__(self, svc_idx=0, total_svcs=3):
+    def __init__(self, svc_idx=1, total_svcs=3):  # ← fix index
         self.svc_idx = svc_idx
         self.total_svcs = total_svcs
         self.orders = {}
 
-    #def init_order(self, order_id, data):
-    #    self.orders[order_id] = {"data": data, "vc": [0] * self.total_svcs}
-
-    def merge_and_increment(self, local_vc, incoming_vc):
+    def InitFraudDetection(self, request, context):
+        order_id = request.orderId
+        logger.info(f"InitFraudDetection called for order {order_id}")
+        self.orders[order_id] = {"data": request, "vc": [0] * self.total_svcs}
+        return Empty()
+    
+    def merge_and_increment(self, local_vc, incoming_vc):  # ← must be INSIDE the class
         for i in range(self.total_svcs):
             local_vc[i] = max(local_vc[i], incoming_vc[i])
         local_vc[self.svc_idx] += 1
     
-    def InitFraudDetection(self, request, context):
-        order_id = request.orderId
-        self.orders[order_id] = {"data" : request, "vc": [0] * self.total_svcs}
-        return Empty()
+    def increment(self, local_vc):          # ← must be indented inside class
+        local_vc[self.svc_idx] += 1
 
-    def CheckFraud(self, request, context):
-        card_number = request.card_number
-        order_amount = request.order_amount
-
-        logger.info(f"Checking fraud for card {card_number} and amount {order_amount}")
-
-        # Launch concurrent checks
-        tasks = {
-            async_check_user_data(card_number): "User-data check failed",
-            async_check_credit_card_data(card_number): "Credit-card check failed",
-            async_check_order_amount(order_amount): "Order-amount check failed"
-        }
-
-        fraud_detected = False
-        failure_reason = None
-
-        # Aggregate results
-        for future in as_completed(tasks):
-            ok, error = future.result()
-            if not ok:
-                fraud_detected = True
-                failure_reason = error
-                break
-
-        if fraud_detected:
-            logger.info(f"Fraud detected: {failure_reason}")
-            return fraud_detection.FraudResponse(is_fraud=True)
-
-        return fraud_detection.FraudResponse(is_fraud=False)
-
-    # re-made with the help of Copilot for true asyncio.gather implementation
     def CheckFraudNew(self, request, context):
         order_id = request.id
-        incoming_vc = request.vectorClock.timeStamp
+        incoming_vc = list(request.vectorClock.timeStamp)
         entry = self.orders.get(order_id)
         self.merge_and_increment(entry["vc"], incoming_vc)
+
         card_number = entry["data"].creditCard.number
         order_amount = sum(int(item.quantity) for item in entry["data"].items)
         logger.info(f"Checking fraud for card {card_number} and amount {order_amount}")
-        async def run_checks():
-            return await asyncio.gather(
-                async_check_user_data(card_number),
-                async_check_credit_card_data(card_number),
-                async_check_order_amount(order_amount),
-                return_exceptions=True
-            )
-        results = asyncio.run(run_checks())
-        error_messages = [
-            "User-data check failed",
-            "Credit-card check failed",
-            "Order-amount check failed"
-        ]
-        for (ok, err), msg in zip(results, error_messages):
-            if isinstance(ok, Exception):
-                return fraud_detection.OrderResponse(
-                    vectorClock=fraud_detection.VectorClock(timeStamp=entry["vc"]),
-                    success=False
-                )
-            if not ok:
-                return fraud_detection.OrderResponse(
-                    vectorClock=fraud_detection.VectorClock(timeStamp=entry["vc"]),
-                    success=False
-                )
-        return fraud_detection.OrderResponse(
-            vectorClock=fraud_detection.VectorClock(timeStamp=entry["vc"]),
-            success=True
-        )
 
+        async def run_checks():
+            # Event d: check user data first (depends on b from transaction_verification)
+            result_d = await async_check_user_data(card_number)
+            ok_d, err_d = result_d
+            if not ok_d:
+                return False, err_d or "User-data check failed"
+            self.increment(entry["vc"])  # tick for event d
+
+            # Event e: card fraud check — depends on both c (from TV) and d (just completed)
+            result_e = await async_check_credit_card_data(card_number)
+            ok_e, err_e = result_e
+            if not ok_e:
+                return False, err_e or "Credit-card check failed"
+            self.increment(entry["vc"])  # tick for event e
+
+            # Amount check can accompany e
+            result_amt = await async_check_order_amount(order_amount)
+            ok_amt, err_amt = result_amt
+            if not ok_amt:
+                return False, err_amt or "Order-amount check failed"
+
+            return True, None
+
+        success, error = asyncio.run(run_checks())
+
+        if not success:
+            logger.info(f"Fraud detected: {error}")
+            return fraud_detection.OrderResponse(
+                vectorClock=fraud_detection.VectorClock(timeStamp=entry["vc"]),
+                success=False
+            )
+
+        # Increment clock before forwarding to suggestions (event e → f)
+        self.increment(entry["vc"])  # tick own slot for the send event
+        logger.info(f"VC after increment: {entry['vc']}")
+
+        with grpc.insecure_channel('suggestions:50053') as channel:
+            stub = suggestions_grpc.SuggestionsServiceStub(channel)
+            response = stub.SuggestBooksNew(suggestions.OrderInfo(
+                id=order_id,
+                vectorClock=suggestions.VectorClock(timeStamp=entry["vc"])
+            ))
+        return response
 
 
 def serve():

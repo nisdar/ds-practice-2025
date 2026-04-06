@@ -7,7 +7,7 @@ import "google/protobuf/empty.proto";
 
 service SuggestionsService {
     rpc SuggestBooks (SuggestionRequest) returns (SuggestionResponse);
-    rpc SuggestBooksNew (SuggestionRequest) returns (OrderResponse);
+    rpc SuggestBooksNew (OrderInfo) returns (OrderResponse);
     rpc InitSuggestions (OrderData) returns (google.protobuf.Empty);
 }
 

@@ -103,13 +103,18 @@ class OrderQueueService(order_queue_grpc.OrderQueueServiceServicer):
     def Dequeue(self, request, context):
         logger.info("Dequeue request received")
         ok, removed_order = self.queue.dequeue()
-        if removed_order:
+        if removed_order: # Distinguish between failure and empty queue
             logger.info(f"Dequeued order: {removed_order}")
-
-        return oq.DequeueResponse(
-            success=ok,
-            order=removed_order if removed_order else ""
-        )
+            return oq.DequeueResponse(
+                success=True,
+                order=removed_order
+            )
+        else:
+            # Clearly signal "nothing to dequeue" vs a real failure
+            return oq.DequeueResponse(
+                success=False,
+                order=""
+            )
 
 
 def serve():

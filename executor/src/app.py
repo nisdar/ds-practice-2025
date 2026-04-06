@@ -114,24 +114,19 @@ class ExecutorService(executor_grpc.ExecutorServiceServicer):
         leader = request.leader_id
         with self.lock:
             self.leader_id = leader
+        logger.info(f"{self.my_id}: Leader announced: {leader}")
 
-        if leader == self.my_id and request.finished:
-            return executor.LeaderAnnouncementResponse(
-                leader_id=leader,
-                finished=True
-            )
         next_id = self._next_peer(self.peer_ids)
+        # Stop forwarding only when the message has gone full circle back to leader
+        if next_id == leader:
+            return executor.LeaderAnnouncementResponse(leader_id=leader, finished=True)
+
         stub = executor_grpc.ExecutorServiceStub(self._channel_for(next_id))
-        finished = (next_id == leader)
-        # fire-and-forget
         stub.AnnounceLeader(executor.LeaderAnnouncementRequest(
             leader_id=leader,
-            finished=finished
-        ))
-        return executor.LeaderAnnouncementResponse(
-            leader_id=leader,
             finished=False
-        )
+        ))
+        return executor.LeaderAnnouncementResponse(leader_id=leader, finished=False)
 
     
     def run(self):
@@ -144,16 +139,23 @@ class ExecutorService(executor_grpc.ExecutorServiceServicer):
                 self._channel_for(self._next_peer(self.peer_ids))
             )
             stub.StartLeaderElection(executor.LeaderElectionRequest())
+        
+        POLL_INTERVAL = 2  # seconds to wait when queue is empty
+
         while True:
             if self.leader_id == self.my_id:
                 logger.info(f"{self.my_id}: I am the leader. Dequeuing...")
                 try:
                     response = self.queue_stub.Dequeue(order_queue.DequeueRequest())
-                    if response.order_queue:
-                        logger.info("Order is being executed...")
+                    if response.order:                        # was response.order_queue
+                        logger.info(f"Order is being executed: {response.order}")
+                        # process the order here...
+                    else:
+                        logger.debug("Queue empty, backing off...")
+                        time.sleep(POLL_INTERVAL)             # back off when empty
                 except Exception as e:
                     logger.error(f"Dequeue error: {e}")
-                time.sleep(1)
+                    time.sleep(POLL_INTERVAL)                 # back off on error too
             else:
                 time.sleep(1)
 
