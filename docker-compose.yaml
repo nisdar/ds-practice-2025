@@ -114,12 +114,16 @@ services:
       - ./utils:/app/utils
       - ./order_queue/src:/app/order_queue/src
   executor-1:
+    restart: always
     build:
       context: ./
       dockerfile: ./executor/Dockerfile
     hostname: executor-1
     # no ports, because would collide on host
     environment:
+      - EXECUTOR_ID=1
+      - CRASH_ENABLED=false
+      - RESTART_DELAY=10
       - PYTHONUNBUFFERED=TRUE
       - PYTHONFILE=/app/executor/src/app.py
       - EXECUTOR_ID=1
@@ -128,29 +132,39 @@ services:
       - ./utils:/app/utils
       - ./executor/src:/app/executor/src
   executor-2:
+    restart: always
     build:
       context: ./
       dockerfile: ./executor/Dockerfile
     hostname: executor-2
     # no ports, because would collide on host
     environment:
+      - EXECUTOR_ID=2
+      - CRASH_ENABLED=true    # executor 2 will crash randomly
+      - RESTART_DELAY=10
+      - CRASH_MIN_DELAY=15
+      - CRASH_MAX_DELAY=30
       - PYTHONUNBUFFERED=TRUE
       - PYTHONFILE=/app/executor/src/app.py
-      - EXECUTOR_ID=2
       - EXECUTOR_PEERS=1,2,3
     volumes:
       - ./utils:/app/utils
       - ./executor/src:/app/executor/src
   executor-3:
+    restart: always
     build:
       context: ./
       dockerfile: ./executor/Dockerfile
     hostname: executor-3
     # no ports, because would collide on host
     environment:
+      - EXECUTOR_ID=3
+      - CRASH_ENABLED=true    # executor 3 will crash randomly
+      - RESTART_DELAY=10
+      - CRASH_MIN_DELAY=15
+      - CRASH_MAX_DELAY=30
       - PYTHONUNBUFFERED=TRUE
       - PYTHONFILE=/app/executor/src/app.py
-      - EXECUTOR_ID=3
       - EXECUTOR_PEERS=1,2,3
     volumes:
       - ./utils:/app/utils
