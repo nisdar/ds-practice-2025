@@ -1,6 +1,5 @@
 import sys
 import os
-import re
 import threading
 import time
 
@@ -25,7 +24,6 @@ import order_queue_pb2_grpc as order_queue_grpc
 
 import grpc
 from concurrent import futures
-from concurrent.futures import ThreadPoolExecutor, as_completed
 
 class HelloService(executor_grpc.HelloServiceServicer):
     def SayHello(self, request, context):
@@ -36,8 +34,8 @@ class HelloService(executor_grpc.HelloServiceServicer):
 
 # This was made with the help of Copilot, based on a skeleton of code.
 class ExecutorService(executor_grpc.ExecutorServiceServicer):
-    def __init__(self, my_id, peer_ids, queue_stub):
-        self.my_id = int(my_id)
+    def __init__(self, executor_id, peer_ids, queue_stub):
+        self.my_id = int(executor_id)
         self.peer_ids = sorted(map(int, peer_ids))
         self.queue_stub = queue_stub
         self.leader_id = None
@@ -79,7 +77,6 @@ class ExecutorService(executor_grpc.ExecutorServiceServicer):
         ids = list(request.executors_ids)
         if self.my_id not in ids:
             ids.append(self.my_id)
-        next_id = self._next_peer(self.peer_ids)
         # If message returns to starter
         if ids[0] == self.my_id and len(ids) > 1:
             leader = max(ids)
@@ -160,13 +157,13 @@ class ExecutorService(executor_grpc.ExecutorServiceServicer):
                 time.sleep(1)
 
 # This method was made with the help of Copilot from skeleton code.
-def launch_executor(my_id, peer_ids):
-    my_id = int(my_id)
+def launch_executor(executor_id, peer_ids):
+    my_executor_id = int(executor_id)
     peer_ids = list(map(int, peer_ids))
     # Connect to order queue
     channel = grpc.insecure_channel("order_queue:50054")
     queue_stub = order_queue_grpc.OrderQueueServiceStub(channel)
-    service = ExecutorService(my_id, peer_ids, queue_stub)
+    service = ExecutorService(my_executor_id, peer_ids, queue_stub)
 
     # gRPC server for receiving election messages
     grpc_server = grpc.server(futures.ThreadPoolExecutor())
@@ -174,7 +171,7 @@ def launch_executor(my_id, peer_ids):
     executor_grpc.add_HelloServiceServicer_to_server(HelloService(), grpc_server)
     grpc_server.add_insecure_port("[::]:50055")
     grpc_server.start()
-    logger.info(f"Executor {my_id} gRPC server running on :50055")
+    logger.info(f"Executor {my_executor_id} gRPC server running on :50055")
     # run election and processing loop in background
     t = threading.Thread(target=service.run, daemon=True)
     t.start()

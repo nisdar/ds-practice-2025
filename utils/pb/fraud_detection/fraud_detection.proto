@@ -5,21 +5,9 @@ package fraud_detection;
 import "google/protobuf/empty.proto";
 
 service FraudDetectionService {
-    rpc CheckFraud (FraudRequest) returns (FraudResponse);
-    rpc CheckFraudNew (OrderInfo) returns (OrderResponse);
+    rpc CheckFraud (OrderInfo) returns (OrderResponse);
     rpc InitFraudDetection (OrderData) returns (google.protobuf.Empty);
 }
-
-
-message FraudRequest {
-    string card_number = 1;
-    float order_amount = 2;
-}
-
-message FraudResponse {
-    bool is_fraud = 1;
-}
-
 
 
 message CreditCard {

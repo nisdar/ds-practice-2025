@@ -45,82 +45,9 @@ def greet(name='admin'):
         suggestions_response = suggestions_stub.SayHello(suggestions.HelloRequest(name=name))
     return f"Fraud_detection: {fraud_response.greeting} Transaction_verification: {transaction_response.greeting} Suggestions: {suggestions_response.greeting}"
 
-def call_fraud_detection(card_number, order_amount):
-    # Establish a connection with the fraud-detection gRPC service.
-    with grpc.insecure_channel('fraud_detection:50051') as channel:
-        # Create a stub object.
-        stub = fraud_detection_grpc.FraudDetectionServiceStub(channel)
-        request_obj = fraud_detection.FraudRequest(card_number=card_number, order_amount=order_amount)
-        # Call the service through the stub object.
-        response = stub.CheckFraud(request_obj)
-    return response.is_fraud
-
-def call_fraud_detection_new(order_id, vc):
-    # Establish a connection with the fraud-detection gRPC service.
-    with grpc.insecure_channel('fraud_detection:50051') as channel:
-        # Create a stub object.
-        stub = fraud_detection_grpc.FraudDetectionServiceStub(channel)
-        request_obj = fraud_detection.OrderInfo(
-            id=order_id,
-            vectorClock=fraud_detection.VectorClock(timeStamp=vc)
-        )
-        # Call the service through the stub object.
-        response = stub.CheckFraudNew(request_obj)
-    return response
-
-def call_transaction_verification(items, user, card, comment, billing_address, shipping_method, gift_wrapping, terms_accepted):
-    ### due to dictionary usage, transformed to PB2 dictionaries with help from Mistral Le Chat
-    # Convert items
-    pb_items = []
-    for item in items:
-        pb_item = transaction_verification.ItemData(name=item['name'], quantity=str(item['quantity']))
-        pb_items.append(pb_item)
-
-    # Convert user
-    pb_user = transaction_verification.User(name=user['name'], contact=user['contact'])
-
-    # Convert credit card
-    pb_card = transaction_verification.CreditCard(
-        number=card['number'],
-        expirationDate=card['expirationDate'],
-        cvv=card['cvv']
-    )
-
-    # Convert comment
-    pb_comment = transaction_verification.Comment(comment=comment)
-
-    # Convert billing address
-    pb_billing_address = transaction_verification.BillingAddress(
-        street=billing_address['street'],
-        city=billing_address['city'],
-        state=billing_address['state'],
-        zip=billing_address['zip'],
-        country=billing_address['country']
-    )
-
-    # Build the request
-    request_obj = transaction_verification.VerificationRequest(
-        items=pb_items,
-        user=pb_user,
-        creditCard=pb_card,
-        comment=pb_comment,
-        billingAddress=pb_billing_address,
-        shippingMethod=shipping_method,
-        giftWrapping=gift_wrapping,
-        termsAccepted=terms_accepted
-    )
-
-    # Establish a connection with the transaction verification gRPC service.
-    with grpc.insecure_channel('transaction_verification:50052') as channel:
-        # Create a stub object.
-        stub = transaction_verification_grpc.TransactionVerificationServiceStub(channel)
-        # Call the service through the stub object.
-        response = stub.VerifyTransaction(request_obj)
-    # TODO response.comment might have not-great formatting
-    return response# + " " + response.comment
-
-
-def call_transaction_verification_new(order_id, vc):
+# This currently needs to stay here as transaction_verification gets an actual call
+## however, this should be combined into the Init for transaction_verification
+def call_transaction_verification(order_id, vc):
     # Establish a connection with the fraud-detection gRPC service.
     with grpc.insecure_channel('transaction_verification:50052') as channel:
         # Create a stub object.
@@ -130,7 +57,7 @@ def call_transaction_verification_new(order_id, vc):
             vectorClock=transaction_verification.VectorClock(timeStamp=vc)
         )
         # Call the service through the stub object.
-        response = stub.VerifyTransactionNew(request_obj)
+        response = stub.VerifyTransaction(request_obj)
     logger.debug(f"{response}, {type(response)}")
     return {"vc": response.vectorClock,
             "success": response.success,
@@ -142,27 +69,6 @@ def call_transaction_verification_new(order_id, vc):
             }
             for book in response.suggestions
         ]}
-
-def call_suggestions(card_number, order_amount):
-    # Establish a connection with the suggestions gRPC service.
-    with grpc.insecure_channel('suggestions:50053') as channel:
-        # Create a stub object.
-        stub = suggestions_grpc.SuggestionsServiceStub(channel)
-        request_obj = suggestions.SuggestionRequest(card_number=card_number, order_amount=order_amount)
-        # Call the service through the stub object.
-        response = stub.SuggestBooks(request_obj)
-
-        books_list = []
-
-        result = [
-            {
-                "id": book.id,
-                "title": book.title,
-                "author": book.author
-            }
-            for book in response.books
-        ]
-    return result
 
 def init_fraud_detection(orderData):
     #Initialize fraud detection
@@ -270,9 +176,9 @@ async def async_checkout_logic(order_id, request_data):
                         formatOrderData(transaction_verification, order_id, request_data))
     await run_in_thread(init_suggestions,
                         formatOrderData(suggestions, order_id, request_data))
-    # Run 3 RPCs concurrently
-    #or not
-    resp = await run_in_thread(call_transaction_verification_new, order_id, [0, 0, 0])
+    # Begin the transaction_verification chain
+    ## This could be combined with the init_transaction_verification maybe
+    resp = await run_in_thread(call_transaction_verification, order_id, [0, 0, 0])
     # Evaluate
     status = "Order Approved"
     if not resp["success"]:
