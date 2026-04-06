@@ -184,7 +184,6 @@ class TransactionVerificationService(transaction_verification_grpc.TransactionVe
             # Round 2: c (needs a) and d-trigger (needs b) run in parallel
             # c = card format check, b's result gates fraud_detection's d
             ok_b, err_b = result_b
-            self.increment(entry["vc"])  # tick for sending data to d after b
             
             result_c, result_comment, result_addr, result_ship = await asyncio.gather(
                 async_check_credit_card(data.creditCard),      # event c (after a)
