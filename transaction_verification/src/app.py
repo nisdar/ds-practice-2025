@@ -225,6 +225,7 @@ class TransactionVerificationService(transaction_verification_grpc.TransactionVe
         # Forward to fraud_detection, passing the vector clock
         # fraud_detection will call suggestions, which returns the final response
         self.increment(entry["vc"])
+        logger.info(f"VC after final increment: {entry['vc']}")
 
         with grpc.insecure_channel('fraud_detection:50051') as channel:
             stub = fraud_detection_grpc.FraudDetectionServiceStub(channel)
