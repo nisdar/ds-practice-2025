@@ -96,12 +96,12 @@ class FraudDetectionService(fraud_detection_grpc.FraudDetectionServiceServicer):
         self.orders[order_id] = {"data": request, "vc": [0] * self.total_svcs}
         return Empty()
     
-    def merge_and_increment(self, local_vc, incoming_vc):  # ← must be INSIDE the class
+    def merge_and_increment(self, local_vc, incoming_vc):
         for i in range(self.total_svcs):
             local_vc[i] = max(local_vc[i], incoming_vc[i])
         local_vc[self.svc_idx] += 1
     
-    def increment(self, local_vc):          # ← must be indented inside class
+    def increment(self, local_vc):
         local_vc[self.svc_idx] += 1
 
     def CheckFraud(self, request, context):

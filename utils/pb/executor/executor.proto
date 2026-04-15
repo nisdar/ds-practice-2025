@@ -6,6 +6,7 @@ service ExecutorService {
     rpc StartLeaderElection (LeaderElectionRequest) returns (LeaderElectionResponse);
     rpc ElectLeader (LeaderElectionRequest) returns (LeaderElectionResponse);
     rpc AnnounceLeader (LeaderAnnouncementRequest) returns (LeaderAnnouncementResponse);
+    rpc Heartbeat (HeartbeatRequest) returns (HeartbeatResponse);
 }
 
 message LeaderElectionRequest {
@@ -26,8 +27,12 @@ message LeaderAnnouncementResponse {
     bool finished = 2;
 }
 
-
-
+message HeartbeatRequest {
+    int32 leader_id = 1;
+}
+message HeartbeatResponse {
+    bool acknowledged = 1;
+}
 
 service HelloService {
     rpc SayHello (HelloRequest) returns (HelloResponse);

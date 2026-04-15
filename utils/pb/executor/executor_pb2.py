@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0e\x65xecutor.proto\x12\x08\x65xecutor\"@\n\x15LeaderElectionRequest\x12\x15\n\rexecutors_ids\x18\x01 \x03(\x05\x12\x10\n\x08\x66inished\x18\x02 \x01(\x08\"@\n\x19LeaderAnnouncementRequest\x12\x11\n\tleader_id\x18\x01 \x01(\x05\x12\x10\n\x08\x66inished\x18\x02 \x01(\x08\"A\n\x16LeaderElectionResponse\x12\x15\n\rexecutors_ids\x18\x01 \x03(\x05\x12\x10\n\x08\x66inished\x18\x02 \x01(\x08\"A\n\x1aLeaderAnnouncementResponse\x12\x11\n\tleader_id\x18\x01 \x01(\x05\x12\x10\n\x08\x66inished\x18\x02 \x01(\x08\"\x1c\n\x0cHelloRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\"!\n\rHelloResponse\x12\x10\n\x08greeting\x18\x01 \x01(\t2\x9a\x02\n\x0f\x45xecutorService\x12X\n\x13StartLeaderElection\x12\x1f.executor.LeaderElectionRequest\x1a .executor.LeaderElectionResponse\x12P\n\x0b\x45lectLeader\x12\x1f.executor.LeaderElectionRequest\x1a .executor.LeaderElectionResponse\x12[\n\x0e\x41nnounceLeader\x12#.executor.LeaderAnnouncementRequest\x1a$.executor.LeaderAnnouncementResponse2K\n\x0cHelloService\x12;\n\x08SayHello\x12\x16.executor.HelloRequest\x1a\x17.executor.HelloResponseb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0e\x65xecutor.proto\x12\x08\x65xecutor\"@\n\x15LeaderElectionRequest\x12\x15\n\rexecutors_ids\x18\x01 \x03(\x05\x12\x10\n\x08\x66inished\x18\x02 \x01(\x08\"@\n\x19LeaderAnnouncementRequest\x12\x11\n\tleader_id\x18\x01 \x01(\x05\x12\x10\n\x08\x66inished\x18\x02 \x01(\x08\"A\n\x16LeaderElectionResponse\x12\x15\n\rexecutors_ids\x18\x01 \x03(\x05\x12\x10\n\x08\x66inished\x18\x02 \x01(\x08\"A\n\x1aLeaderAnnouncementResponse\x12\x11\n\tleader_id\x18\x01 \x01(\x05\x12\x10\n\x08\x66inished\x18\x02 \x01(\x08\"%\n\x10HeartbeatRequest\x12\x11\n\tleader_id\x18\x01 \x01(\x05\")\n\x11HeartbeatResponse\x12\x14\n\x0c\x61\x63knowledged\x18\x01 \x01(\x08\"\x1c\n\x0cHelloRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\"!\n\rHelloResponse\x12\x10\n\x08greeting\x18\x01 \x01(\t2\xe0\x02\n\x0f\x45xecutorService\x12X\n\x13StartLeaderElection\x12\x1f.executor.LeaderElectionRequest\x1a .executor.LeaderElectionResponse\x12P\n\x0b\x45lectLeader\x12\x1f.executor.LeaderElectionRequest\x1a .executor.LeaderElectionResponse\x12[\n\x0e\x41nnounceLeader\x12#.executor.LeaderAnnouncementRequest\x1a$.executor.LeaderAnnouncementResponse\x12\x44\n\tHeartbeat\x12\x1a.executor.HeartbeatRequest\x1a\x1b.executor.HeartbeatResponse2K\n\x0cHelloService\x12;\n\x08SayHello\x12\x16.executor.HelloRequest\x1a\x17.executor.HelloResponseb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -39,12 +39,16 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_LEADERELECTIONRESPONSE']._serialized_end=225
   _globals['_LEADERANNOUNCEMENTRESPONSE']._serialized_start=227
   _globals['_LEADERANNOUNCEMENTRESPONSE']._serialized_end=292
-  _globals['_HELLOREQUEST']._serialized_start=294
-  _globals['_HELLOREQUEST']._serialized_end=322
-  _globals['_HELLORESPONSE']._serialized_start=324
-  _globals['_HELLORESPONSE']._serialized_end=357
-  _globals['_EXECUTORSERVICE']._serialized_start=360
-  _globals['_EXECUTORSERVICE']._serialized_end=642
-  _globals['_HELLOSERVICE']._serialized_start=644
-  _globals['_HELLOSERVICE']._serialized_end=719
+  _globals['_HEARTBEATREQUEST']._serialized_start=294
+  _globals['_HEARTBEATREQUEST']._serialized_end=331
+  _globals['_HEARTBEATRESPONSE']._serialized_start=333
+  _globals['_HEARTBEATRESPONSE']._serialized_end=374
+  _globals['_HELLOREQUEST']._serialized_start=376
+  _globals['_HELLOREQUEST']._serialized_end=404
+  _globals['_HELLORESPONSE']._serialized_start=406
+  _globals['_HELLORESPONSE']._serialized_end=439
+  _globals['_EXECUTORSERVICE']._serialized_start=442
+  _globals['_EXECUTORSERVICE']._serialized_end=794
+  _globals['_HELLOSERVICE']._serialized_start=796
+  _globals['_HELLOSERVICE']._serialized_end=871
 # @@protoc_insertion_point(module_scope)

@@ -191,7 +191,10 @@ class TransactionVerificationService(transaction_verification_grpc.TransactionVe
                 async_check_billing_address(data.billingAddress),
                 async_check_shipping_method(data.shippingMethod),
             )
-            self.increment(entry["vc"])  # tick for event c
+            self.increment(entry["vc"])  # tick for event c-1
+            self.increment(entry["vc"])  # tick for event c-2
+            self.increment(entry["vc"])  # tick for event c-3
+            self.increment(entry["vc"])  # tick for event c-4
 
             # b must pass before d can run (d is in fraud_detection)
             if not ok_b:

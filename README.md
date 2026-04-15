@@ -51,3 +51,12 @@ And then run each service individually.
 ![System diagram](https://github.com/nisdar/ds-practice-2025/blob/master/diagrams/System_diagram.drawio.svg)
 #### Architecture diagram
 ![App Platorm](https://github.com/nisdar/ds-practice-2025/blob/master/diagrams/Architecture_diagram.drawio.svg)
+
+#### Vector Clock Diagram
+![Vector Clock Diagram](https://github.com/nisdar/ds-practice-2025/blob/master/diagrams/VectorClocl.drawio.svg)
+
+#### Leader Election Diagram
+![Leader Election 1](https://github.com/nisdar/ds-practice-2025/blob/master/diagrams/LeaderElection1.drawio.svg)
+
+![Leader Election 2](https://github.com/nisdar/ds-practice-2025/blob/master/diagrams/LeaderElection2.drawio.svg)
+
