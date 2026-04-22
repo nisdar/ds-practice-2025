@@ -39,3 +39,5 @@ Extend your system with the following functionality and new services:
 ## Session 11 decisions
 
 About commitment (transaction) schemes: [this article](https://tikv.org/deep-dive/distributed-transaction/distributed-algorithms/) seems nice.
+
+2PC seems perfectly cromulent.
