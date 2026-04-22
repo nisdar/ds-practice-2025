@@ -44,6 +44,16 @@ class DatabaseStub(object):
                 request_serializer=database__pb2.WriteRequest.SerializeToString,
                 response_deserializer=database__pb2.WriteResponse.FromString,
                 _registered_method=True)
+        self.Delete = channel.unary_unary(
+                '/database.Database/Delete',
+                request_serializer=database__pb2.DeleteRequest.SerializeToString,
+                response_deserializer=database__pb2.DeleteResponse.FromString,
+                _registered_method=True)
+        self.GetAll = channel.unary_unary(
+                '/database.Database/GetAll',
+                request_serializer=database__pb2.GetAllRequest.SerializeToString,
+                response_deserializer=database__pb2.GetAllResponse.FromString,
+                _registered_method=True)
 
 
 class DatabaseServicer(object):
@@ -61,6 +71,18 @@ class DatabaseServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def Delete(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetAll(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_DatabaseServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -73,6 +95,16 @@ def add_DatabaseServicer_to_server(servicer, server):
                     servicer.Write,
                     request_deserializer=database__pb2.WriteRequest.FromString,
                     response_serializer=database__pb2.WriteResponse.SerializeToString,
+            ),
+            'Delete': grpc.unary_unary_rpc_method_handler(
+                    servicer.Delete,
+                    request_deserializer=database__pb2.DeleteRequest.FromString,
+                    response_serializer=database__pb2.DeleteResponse.SerializeToString,
+            ),
+            'GetAll': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetAll,
+                    request_deserializer=database__pb2.GetAllRequest.FromString,
+                    response_serializer=database__pb2.GetAllResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -129,6 +161,132 @@ class Database(object):
             '/database.Database/Write',
             database__pb2.WriteRequest.SerializeToString,
             database__pb2.WriteResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def Delete(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/database.Database/Delete',
+            database__pb2.DeleteRequest.SerializeToString,
+            database__pb2.DeleteResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetAll(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/database.Database/GetAll',
+            database__pb2.GetAllRequest.SerializeToString,
+            database__pb2.GetAllResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+
+class HelloServiceStub(object):
+    """Missing associated documentation comment in .proto file."""
+
+    def __init__(self, channel):
+        """Constructor.
+
+        Args:
+            channel: A grpc.Channel.
+        """
+        self.SayHello = channel.unary_unary(
+                '/database.HelloService/SayHello',
+                request_serializer=database__pb2.HelloRequest.SerializeToString,
+                response_deserializer=database__pb2.HelloResponse.FromString,
+                _registered_method=True)
+
+
+class HelloServiceServicer(object):
+    """Missing associated documentation comment in .proto file."""
+
+    def SayHello(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+
+def add_HelloServiceServicer_to_server(servicer, server):
+    rpc_method_handlers = {
+            'SayHello': grpc.unary_unary_rpc_method_handler(
+                    servicer.SayHello,
+                    request_deserializer=database__pb2.HelloRequest.FromString,
+                    response_serializer=database__pb2.HelloResponse.SerializeToString,
+            ),
+    }
+    generic_handler = grpc.method_handlers_generic_handler(
+            'database.HelloService', rpc_method_handlers)
+    server.add_generic_rpc_handlers((generic_handler,))
+    server.add_registered_method_handlers('database.HelloService', rpc_method_handlers)
+
+
+ # This class is part of an EXPERIMENTAL API.
+class HelloService(object):
+    """Missing associated documentation comment in .proto file."""
+
+    @staticmethod
+    def SayHello(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/database.HelloService/SayHello',
+            database__pb2.HelloRequest.SerializeToString,
+            database__pb2.HelloResponse.FromString,
             options,
             channel_credentials,
             insecure,
