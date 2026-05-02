@@ -25,7 +25,7 @@ if _version_not_supported:
     )
 
 
-class DatabaseStub(object):
+class DatabaseServiceStub(object):
     """Missing associated documentation comment in .proto file."""
 
     def __init__(self, channel):
@@ -35,28 +35,28 @@ class DatabaseStub(object):
             channel: A grpc.Channel.
         """
         self.Read = channel.unary_unary(
-                '/database.Database/Read',
+                '/database.DatabaseService/Read',
                 request_serializer=database__pb2.ReadRequest.SerializeToString,
                 response_deserializer=database__pb2.ReadResponse.FromString,
                 _registered_method=True)
         self.Write = channel.unary_unary(
-                '/database.Database/Write',
+                '/database.DatabaseService/Write',
                 request_serializer=database__pb2.WriteRequest.SerializeToString,
                 response_deserializer=database__pb2.WriteResponse.FromString,
                 _registered_method=True)
         self.Delete = channel.unary_unary(
-                '/database.Database/Delete',
+                '/database.DatabaseService/Delete',
                 request_serializer=database__pb2.DeleteRequest.SerializeToString,
                 response_deserializer=database__pb2.DeleteResponse.FromString,
                 _registered_method=True)
         self.GetAll = channel.unary_unary(
-                '/database.Database/GetAll',
+                '/database.DatabaseService/GetAll',
                 request_serializer=database__pb2.GetAllRequest.SerializeToString,
                 response_deserializer=database__pb2.GetAllResponse.FromString,
                 _registered_method=True)
 
 
-class DatabaseServicer(object):
+class DatabaseServiceServicer(object):
     """Missing associated documentation comment in .proto file."""
 
     def Read(self, request, context):
@@ -84,7 +84,7 @@ class DatabaseServicer(object):
         raise NotImplementedError('Method not implemented!')
 
 
-def add_DatabaseServicer_to_server(servicer, server):
+def add_DatabaseServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'Read': grpc.unary_unary_rpc_method_handler(
                     servicer.Read,
@@ -108,13 +108,13 @@ def add_DatabaseServicer_to_server(servicer, server):
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
-            'database.Database', rpc_method_handlers)
+            'database.DatabaseService', rpc_method_handlers)
     server.add_generic_rpc_handlers((generic_handler,))
-    server.add_registered_method_handlers('database.Database', rpc_method_handlers)
+    server.add_registered_method_handlers('database.DatabaseService', rpc_method_handlers)
 
 
  # This class is part of an EXPERIMENTAL API.
-class Database(object):
+class DatabaseService(object):
     """Missing associated documentation comment in .proto file."""
 
     @staticmethod
@@ -131,7 +131,7 @@ class Database(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/database.Database/Read',
+            '/database.DatabaseService/Read',
             database__pb2.ReadRequest.SerializeToString,
             database__pb2.ReadResponse.FromString,
             options,
@@ -158,7 +158,7 @@ class Database(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/database.Database/Write',
+            '/database.DatabaseService/Write',
             database__pb2.WriteRequest.SerializeToString,
             database__pb2.WriteResponse.FromString,
             options,
@@ -185,7 +185,7 @@ class Database(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/database.Database/Delete',
+            '/database.DatabaseService/Delete',
             database__pb2.DeleteRequest.SerializeToString,
             database__pb2.DeleteResponse.FromString,
             options,
@@ -212,7 +212,7 @@ class Database(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/database.Database/GetAll',
+            '/database.DatabaseService/GetAll',
             database__pb2.GetAllRequest.SerializeToString,
             database__pb2.GetAllResponse.FromString,
             options,

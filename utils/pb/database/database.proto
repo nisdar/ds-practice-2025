@@ -4,7 +4,7 @@ package database;
 
 import "google/protobuf/empty.proto";
 
-service Database {
+service DatabaseService {
     rpc Read (ReadRequest) returns (ReadResponse);
     rpc Write (WriteRequest) returns (WriteResponse);
     rpc Delete (DeleteRequest) returns (DeleteResponse);

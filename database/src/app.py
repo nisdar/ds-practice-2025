@@ -4,6 +4,7 @@ import threading
 import time
 import random
 import signal
+import json
 
 #Set up logging
 import logging
@@ -69,12 +70,28 @@ class KVStore:
                 json.dump(self._store, f)
 
     def _load(self):
-        with open(self._persist_path, 'r') as f:
-            self._store = json.load(f)
-        logger.info(f"Loaded {len(self._store)} records from {self._persist_path}")
+        if not os.path.exists(self._persist_path):
+            self._store = {}
+            self._save()
+            return
+        try:
+            with open(self._persist_path, 'r') as f:
+                content = f.read().strip()
+                if not content:
+                    # empty file
+                    self._store = {}
+                    self._save()
+                    return
+                self._store = json.loads(content)
+        except (json.JSONDecodeError, OSError):
+            # corrupted or unreadable file
+            self._store = {}
+            self._save()
 
 class DatabaseService(database_grpc.DatabaseServiceServicer):
-    def __init__(self):
+    def __init__(self, db_id, peer_ids):
+        self.db_id = int(db_id)
+        self.peer_ids = sorted(map(int, peer_ids))
         self.store = KVStore(persist_path='/data/books.json')
         self._seed_data()
 
@@ -127,17 +144,23 @@ class DatabaseService(database_grpc.DatabaseServiceServicer):
             books=[database.Book(**b) for b in all_books.values()]
         )
     
-def serve():
+def launch_database(db_id, peer_ids):
+    db_id = int(db_id)
+    peer_ids = list(map(int, peer_ids))
+
+    service = DatabaseService(db_id, peer_ids)
+
     server = grpc.server(futures.ThreadPoolExecutor())
-    database_grpc.add_DatabaseServiceServicer_to_server(
-        DatabaseService(), server
-    )
+    database_grpc.add_DatabaseServiceServicer_to_server(service, server)
+
     port = "50057"
     server.add_insecure_port("[::]:" + port)
     server.start()
-    logger.info("Database started on port 50057")
+    logger.info(f"Database {db_id} started on port {port} with peers {peer_ids}")
+
     server.wait_for_termination()
 
-
 if __name__ == '__main__':
-    serve()
+    my_id = int(os.getenv("DATABASE_ID", "1"))
+    peers = list(map(int, os.getenv("DATABASE_PEERS", "1").split(",")))
+    launch_database(my_id, peers)

@@ -191,18 +191,48 @@ services:
     volumes:
       - ./utils:/app/utils
       - ./executor/src:/app/executor/src
-  database:
+  database-1:
     restart: always
     build:
       context: ./
       dockerfile: ./database/Dockerfile
-    hostname: database
-    ports:
-      - 50057:50057
+    hostname: database-1
     environment:
+      - DATABASE_ID=1
+      - DATABASE_PEERS=1,2,3
       - PYTHONUNBUFFERED=TRUE
       - PYTHONFILE=/app/database/src/app.py
     volumes:
       - ./utils:/app/utils
       - ./database/src:/app/database/src
-      - ./database_data:/data  # ← persistent volume for books.json
+      - ./database/database_data_1:/data
+  database-2:
+    restart: always
+    build:
+      context: ./
+      dockerfile: ./database/Dockerfile
+    hostname: database-2
+    environment:
+      - DATABASE_ID=2
+      - DATABASE_PEERS=1,2,3
+      - PYTHONUNBUFFERED=TRUE
+      - PYTHONFILE=/app/database/src/app.py
+    volumes:
+      - ./utils:/app/utils
+      - ./database/src:/app/database/src
+      - ./database/database_data_2:/data
+  database-3:
+    restart: always
+    build:
+      context: ./
+      dockerfile: ./database/Dockerfile
+    hostname: database-3
+    environment:
+      - DATABASE_ID=3
+      - DATABASE_PEERS=1,2,3
+      - PYTHONUNBUFFERED=TRUE
+      - PYTHONFILE=/app/database/src/app.py
+    volumes:
+      - ./utils:/app/utils
+      - ./database/src:/app/database/src
+      - ./database/database_data_3:/data
