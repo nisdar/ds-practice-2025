@@ -11,6 +11,10 @@ import logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger("Executor")
 
+# Little price normalization because of funky floating-points 
+def normalize_price(price):
+    return round(price + 1e-9, 2)
+
 # This set of lines are needed to import the gRPC stubs.
 # The path of the stubs is relative to the current file, or absolute inside the container.
 # Change these lines only if strictly needed.
@@ -225,48 +229,43 @@ class ExecutorService(executor_grpc.ExecutorServiceServicer):
         primary_id = 1
         channel = grpc.insecure_channel(f"database-{primary_id}:50057")
         db_stub = database_grpc.DatabaseServiceStub(channel)
-        # Build catalog once per order
         title_to_id = self._load_title_to_id_map(db_stub)
-        if not title_to_id:
-            logger.error("Empty catalog; cannot execute order")
-            return False
         items = self._parse_order_payload(raw_order)
         if not items:
-            logger.error("No valid order items parsed; failing order")
+            logger.error("No valid order items parsed")
             return False
-        logger.info(f"Executing parsed order items (titles): {items}")
+        planned_writes = []
         for book_title, quantity in items:
             if book_title not in title_to_id:
-                logger.warning(f"Unknown book title '{book_title}'")
+                logger.warning(f"Unknown book '{book_title}'")
                 return False
             book_id = title_to_id[book_title]
-            try:
-                read_resp = db_stub.Read(
-                    database.ReadRequest(book_id=book_id)
+            books = db_stub.GetAll(database.GetAllRequest()).books
+            read_book = next((b for b in books if b.id == book_id), None)
+            if read_book is None:
+                logger.warning(f"Book id {book_id} not found in DB")
+                return False
+            if read_book.stock < quantity:
+                logger.warning(
+                    f"Insufficient stock for '{book_title}' "
+                    f"(id={book_id}): {read_book.stock} < {quantity}"
                 )
-                current_stock = read_resp.stock
-                if current_stock < quantity:
-                    logger.warning(
-                        f"Insufficient stock for '{book_title}' "
-                        f"(id={book_id}): {current_stock} < {quantity}"
-                    )
-                    return False
-                new_stock = current_stock - quantity
-                book_id = title_to_id[book_title]
-                write_resp = db_stub.Write(
-                    database.WriteRequest(
-                        book=database.Book(
-                            id=book_id,
-                            title=book_title,
-                            stock=new_stock
-                        )
+                return False
+            planned_writes.append((read_book, read_book.stock - quantity))
+        for book, new_stock in planned_writes:
+            write_resp = db_stub.Write(
+                database.WriteRequest(
+                    book=database.Book(
+                        id=book.id,
+                        title=book.title,
+                        author=book.author,
+                        price=normalize_price(book.price),
+                        stock=new_stock
                     )
                 )
-                if not write_resp.success:
-                    logger.error(f"Write failed for '{book_title}' (id={book_id})")
-                    return False
-            except grpc.RpcError as e:
-                logger.error(f"Database RPC failed: {e}")
+            )
+            if not write_resp.success:
+                logger.error(f"Commit failed for book id={book.id}")
                 return False
         self.log_database_state(db_stub, prefix="AFTER ORDER")
         return True
@@ -280,7 +279,7 @@ class ExecutorService(executor_grpc.ExecutorServiceServicer):
                     "title": b.title,
                     "author": b.author,
                     "stock": b.stock,
-                    "price": b.price,
+                    "price": normalize_price(b.price),
                 }
                 for b in resp.books
             ]

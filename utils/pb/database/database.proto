@@ -9,6 +9,7 @@ service DatabaseService {
     rpc Write (WriteRequest) returns (WriteResponse);
     rpc Delete (DeleteRequest) returns (DeleteResponse);
     rpc GetAll (GetAllRequest) returns (GetAllResponse);
+    rpc Sync(google.protobuf.Empty) returns (GetAllResponse);
 }
 
 message Book {

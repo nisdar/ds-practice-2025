@@ -20,6 +20,8 @@ sys.path.insert(0, database_grpc_path)
 import database_pb2 as database
 import database_pb2_grpc as database_grpc
 
+from google.protobuf.empty_pb2 import Empty
+
 
 import grpc
 from concurrent import futures
@@ -30,6 +32,10 @@ class HelloService(database_grpc.HelloServiceServicer):
         response.greeting = "Hello, " + request.name
         logger.debug(response.greeting)
         return response
+
+# Little price normalization because of funky floating-points 
+def normalize_price(price):
+    return round(price + 1e-9, 2)
 
 # Key-Value data storage   
 class KVStore:
@@ -93,7 +99,10 @@ class DatabaseService(database_grpc.DatabaseServiceServicer):
         self.db_id = int(db_id)
         self.peer_ids = sorted(map(int, peer_ids))
         self.store = KVStore(persist_path='/data/books.json')
-        self._seed_data()
+        recovered = self._recover_from_peers()
+        if not recovered:
+            self._seed_data()
+
 
     def _seed_data(self):
         # Pre-populate with some books if store is empty.
@@ -155,7 +164,7 @@ class DatabaseService(database_grpc.DatabaseServiceServicer):
             "title": book.title,
             "author": book.author,
             "stock": book.stock,
-            "price": book.price,
+            "price": normalize_price(book.price),
         })
         ok = self.store.write(book.id, data)
         logger.info(
@@ -179,6 +188,13 @@ class DatabaseService(database_grpc.DatabaseServiceServicer):
         return database.GetAllResponse(
             books=[database.Book(**b) for b in all_books.values()]
         )
+    
+    def Sync(self, request, context):
+        logger.info("[DB %s] Sync requested", self.db_id)
+        all_books = self.store.get_all()
+        return database.GetAllResponse(
+            books=[database.Book(**b) for b in all_books.values()]
+        )
 
     def _log_store(self, prefix="DB STORE"):
         data = self.store.get_all()
@@ -191,6 +207,64 @@ class DatabaseService(database_grpc.DatabaseServiceServicer):
             rpc_name,
             request
         )
+
+    def _recover_from_peers(self, max_attempts=10, delay=2):
+        if self.store.get_all():
+            logger.info("[DB %s] Local store present; skipping recovery", self.db_id)
+            return True
+
+        logger.warning("[DB %s] Local store empty; attempting recovery", self.db_id)
+
+        for attempt in range(1, max_attempts + 1):
+            for peer_id in self.peer_ids:
+                if peer_id == self.db_id:
+                    continue
+
+                try:
+                    channel = grpc.insecure_channel(f"database-{peer_id}:50057")
+                    stub = database_grpc.DatabaseServiceStub(channel)
+
+                    response = stub.Sync(
+                        Empty(),  # or Empty()
+                        timeout=2
+                    )
+
+                    if response.books:
+                        logger.info(
+                            "[DB %s] Recovered %d books from DB %s on attempt %d",
+                            self.db_id,
+                            len(response.books),
+                            peer_id,
+                            attempt
+                        )
+                        for book in response.books:
+                            self.store.write(book.id, {
+                                "id": book.id,
+                                "title": book.title,
+                                "author": book.author,
+                                "stock": book.stock,
+                                "price": book.price,
+                            })
+                        return True
+
+                except Exception as e:
+                    logger.warning(
+                        "[DB %s] Attempt %d: recovery from DB %s failed: %s",
+                        self.db_id,
+                        attempt,
+                        peer_id,
+                        e
+                    )
+
+            time.sleep(delay)
+
+        logger.warning(
+            "[DB %s] Recovery failed after %d attempts",
+            self.db_id,
+            max_attempts
+        )
+        return False
+
 
 # Primary and Backup database code snippets are created from an inconsistent code skeleton
 #   with the help of O365 Copilot
@@ -207,7 +281,7 @@ class BackupDatabaseService(DatabaseService):
             "title": request.book.title,
             "author": request.book.author,
             "stock": request.book.stock,
-            "price": request.book.price,
+            "price": normalize_price(request.book.price),
         }
         ok = self.store.write(request.book.id, data)
         return database.WriteResponse(success=ok)
@@ -219,6 +293,12 @@ class BackupDatabaseService(DatabaseService):
 class PrimaryDatabaseService(DatabaseService):
     def __init__(self, db_id, peer_ids):
         super().__init__(db_id, peer_ids)
+
+        if not self.store.get_all():
+            raise RuntimeError(
+                f"Primary DB {db_id} has no state; refusing to start"
+            )
+
         self.backups = []
         for peer_id in peer_ids:
             if peer_id == db_id:

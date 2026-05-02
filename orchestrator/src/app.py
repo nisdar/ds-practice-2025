@@ -15,7 +15,8 @@ fraud_detection_grpc_path = os.path.abspath(os.path.join(FILE, '../../../utils/p
 transaction_verification_grpc_path = os.path.abspath(os.path.join(FILE, '../../../utils/pb/transaction_verification'))
 suggestions_grpc_path = os.path.abspath(os.path.join(FILE, '../../../utils/pb/suggestions'))
 order_queue_grpc_path = os.path.abspath(os.path.join(FILE, '../../../utils/pb/order_queue'))
-
+database_grpc_path = os.path.abspath(os.path.join(FILE, '../../../utils/pb/database'))
+sys.path.insert(0, database_grpc_path)
 sys.path.insert(0, order_queue_grpc_path)
 sys.path.insert(0, fraud_detection_grpc_path)
 sys.path.insert(0, transaction_verification_grpc_path)
@@ -29,6 +30,8 @@ import suggestions_pb2 as suggestions
 import suggestions_pb2_grpc as suggestions_grpc
 import order_queue_pb2 as order_queue
 import order_queue_pb2_grpc as order_queue_grpc
+import database_pb2 as database
+import database_pb2_grpc as database_grpc
 
 import grpc
 
@@ -89,6 +92,32 @@ def init_suggestions(orderData):
     with grpc.insecure_channel('suggestions:50053') as channel:
         stub = suggestions_grpc.SuggestionsServiceStub(channel)
         stub.InitSuggestions(orderData)
+
+def validate_stock_availability(order_payload):
+    """
+    Returns (True, None) if stock is sufficient.
+    Returns (False, reason) otherwise.
+    """
+    items = order_payload.get("items", [])
+    if not items:
+        return False, "No items in order"
+    # Connect to PRIMARY database
+    with grpc.insecure_channel("database-1:50057") as channel:
+        db_stub = database_grpc.DatabaseServiceStub(channel)
+        for item in items:
+            title = item["name"]
+            required_qty = int(item["quantity"])
+            all_books = db_stub.GetAll(database.GetAllRequest()).books
+            book = next((b for b in all_books if b.title == title), None)
+            if book is None:
+                return False, f"Unknown book '{title}'"
+            if book.stock < required_qty:
+                return (
+                    False,
+                    f"Insufficient stock for '{title}' "
+                    f"({book.stock} available, {required_qty} requested)"
+                )
+    return True, None
 
 def formatOrderData(service, order_id, request_data):
     items = request_data.get("items")
@@ -170,6 +199,15 @@ async def run_in_thread(func, *args):
 ## Re-done with the help of Copilot for true asynch processing
 async def async_checkout_logic(order_id, request_data):
     logger.info(f"[Async] Processing {order_id}")
+    # Do a quick stock check before running anything else
+    ok, reason = validate_stock_availability(request_data)
+    if not ok:
+        logger.warning(f"Order {order_id} rejected: {reason}")
+        return {
+            "orderId": order_id,
+            "status": f"Order Rejected: {reason}",
+            "suggestedBooks": [],
+        }
     # Init services
     await run_in_thread(init_fraud_detection,
                         formatOrderData(fraud_detection, order_id, request_data))
@@ -181,19 +219,28 @@ async def async_checkout_logic(order_id, request_data):
     ## This could be combined with the init_transaction_verification maybe
     resp = await run_in_thread(call_transaction_verification, order_id, [0, 0, 0])
     # Evaluate
-    status = "Order Approved"
     if not resp["success"]:
-        status = "Order Rejected"
-    # Enqueue only if approved
-    if status == "Order Approved":
-        await run_in_thread(
-            call_order_queue_enqueue,
-            order_id,
-            json.dumps(request_data)
-        )
+        return {
+            "orderId": order_id,
+            "status": "Order Rejected",
+            "suggestedBooks": resp["suggestions"],
+        }
+    ok, reason = validate_stock_availability(request_data)
+    if not ok:
+        logger.warning(f"Order {order_id} rejected: {reason}")
+        return {
+            "orderId": order_id,
+            "status": f"Order Rejected: {reason}",
+            "suggestedBooks": [],
+        }
+    await run_in_thread(
+        call_order_queue_enqueue,
+        order_id,
+        json.dumps(request_data)
+    )
     return {
         "orderId": order_id,
-        "status": status,
+        "status": "Order Approved",
         "suggestedBooks": resp["suggestions"],
     }
 

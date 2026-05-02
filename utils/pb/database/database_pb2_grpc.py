@@ -4,6 +4,7 @@ import grpc
 import warnings
 
 import database_pb2 as database__pb2
+from google.protobuf import empty_pb2 as google_dot_protobuf_dot_empty__pb2
 
 GRPC_GENERATED_VERSION = '1.78.0'
 GRPC_VERSION = grpc.__version__
@@ -54,6 +55,11 @@ class DatabaseServiceStub(object):
                 request_serializer=database__pb2.GetAllRequest.SerializeToString,
                 response_deserializer=database__pb2.GetAllResponse.FromString,
                 _registered_method=True)
+        self.Sync = channel.unary_unary(
+                '/database.DatabaseService/Sync',
+                request_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
+                response_deserializer=database__pb2.GetAllResponse.FromString,
+                _registered_method=True)
 
 
 class DatabaseServiceServicer(object):
@@ -83,6 +89,12 @@ class DatabaseServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def Sync(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_DatabaseServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -104,6 +116,11 @@ def add_DatabaseServiceServicer_to_server(servicer, server):
             'GetAll': grpc.unary_unary_rpc_method_handler(
                     servicer.GetAll,
                     request_deserializer=database__pb2.GetAllRequest.FromString,
+                    response_serializer=database__pb2.GetAllResponse.SerializeToString,
+            ),
+            'Sync': grpc.unary_unary_rpc_method_handler(
+                    servicer.Sync,
+                    request_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
                     response_serializer=database__pb2.GetAllResponse.SerializeToString,
             ),
     }
@@ -214,6 +231,33 @@ class DatabaseService(object):
             target,
             '/database.DatabaseService/GetAll',
             database__pb2.GetAllRequest.SerializeToString,
+            database__pb2.GetAllResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def Sync(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/database.DatabaseService/Sync',
+            google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
             database__pb2.GetAllResponse.FromString,
             options,
             channel_credentials,
