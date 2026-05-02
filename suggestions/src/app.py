@@ -1,10 +1,11 @@
 import sys
 import os
-import random # Currently used for dummy logic, randomly return a book as there is no way to choose inventory
+import random  # Currently used for dummy logic, randomly return a book as there is no way to choose inventory
 from google.protobuf.empty_pb2 import Empty
 
-#Set up logging
+# Set up logging
 import logging
+
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger("Suggestions")
 
@@ -21,6 +22,7 @@ import suggestions_pb2_grpc as suggestions_grpc
 import grpc
 from concurrent import futures
 
+
 # Create classes to define the server functions
 class HelloService(suggestions_grpc.HelloServiceServicer):
     def SayHello(self, request, context):
@@ -28,6 +30,7 @@ class HelloService(suggestions_grpc.HelloServiceServicer):
         response.greeting = "Hello, " + request.name
         logger.debug(response.greeting)
         return response
+
 
 class SuggestionsService(suggestions_grpc.SuggestionsServiceServicer):
     def __init__(self, svc_idx=2, total_svcs=3):
@@ -39,23 +42,23 @@ class SuggestionsService(suggestions_grpc.SuggestionsServiceServicer):
         for i in range(self.total_svcs):
             local_vc[i] = max(local_vc[i], incoming_vc[i])
         local_vc[self.svc_idx] += 1
-        
-    def increment(self, local_vc):          # ← must be indented inside class
+
+    def increment(self, local_vc):  # ← must be indented inside class
         local_vc[self.svc_idx] += 1
-    
+
     def InitSuggestions(self, request, context):
         order_id = request.orderId
-        self.orders[order_id] = {"data" : request, "vc": [0] * self.total_svcs}
+        self.orders[order_id] = {"data": request, "vc": [0] * self.total_svcs}
         return Empty()
 
     def SuggestBooks(self, request, context):
         order_id = request.id
         incoming_vc = list(request.vectorClock.timeStamp)  # ← convert to list
         entry = self.orders.get(order_id)
-        
+
         # Merge fraud_detection's clock (which already carries TV's history)
         self.merge_and_increment(entry["vc"], incoming_vc)
-        
+
         logger.info(f"Generating suggestions for order {order_id}, vc={entry['vc']}")
 
         books = [
@@ -72,7 +75,7 @@ class SuggestionsService(suggestions_grpc.SuggestionsServiceServicer):
 
         # Tick 2: event f completes
         self.increment(entry["vc"])
-        
+
         # Tick 3: send final response
         self.increment(entry["vc"])
 
@@ -84,7 +87,8 @@ class SuggestionsService(suggestions_grpc.SuggestionsServiceServicer):
                 for b in selected
             ]
         )
-    
+
+
 def serve():
     # Create a gRPC server
     server = grpc.server(futures.ThreadPoolExecutor())

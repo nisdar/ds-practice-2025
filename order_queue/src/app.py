@@ -2,8 +2,9 @@ import sys
 import os
 import threading
 
-#Set up logging
+# Set up logging
 import logging
+
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger("Order queue")
 
@@ -18,6 +19,7 @@ import order_queue_pb2_grpc as order_queue_grpc
 
 import grpc
 from concurrent import futures
+
 
 # Create a class to define the server functions, derived from
 # order_queue_pb2_grpc.HelloServiceServicer
@@ -59,6 +61,7 @@ class QueueStorage:
             # Expose only order_ids for debugging / inspection
             return [order_id for order_id, _ in self._queue]
 
+
 # This class was made with the help of Copilot from the skeleton code.
 class OrderQueueService(order_queue_grpc.OrderQueueServiceServicer):
     def __init__(self, svc_idx=0, total_svcs=3):
@@ -80,7 +83,7 @@ class OrderQueueService(order_queue_grpc.OrderQueueServiceServicer):
         if not ok:
             context.abort(grpc.StatusCode.INTERNAL, "Queue enqueue failed")
         return oq.EnqueueResponse(success=True)
-        
+
     def Dequeue(self, request, context):
         logger.info("Dequeue request received")
         ok, entry = self.queue.dequeue()

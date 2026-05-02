@@ -4,8 +4,9 @@ import threading
 import time
 import json
 
-#Set up logging
+# Set up logging
 import logging
+
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger("Database")
 
@@ -20,9 +21,9 @@ import database_pb2_grpc as database_grpc
 
 from google.protobuf.empty_pb2 import Empty
 
-
 import grpc
 from concurrent import futures
+
 
 class HelloService(database_grpc.HelloServiceServicer):
     def SayHello(request, context):
@@ -31,11 +32,13 @@ class HelloService(database_grpc.HelloServiceServicer):
         logger.debug(response.greeting)
         return response
 
-# Little price normalization because of funky floating-points 
+
+# Little price normalization because of funky floating-points
 def normalize_price(price):
     return round(price + 1e-9, 2)
 
-# Key-Value data storage   
+
+# Key-Value data storage
 class KVStore:
     # Thread-safe in-memory key-value store with optional file persistence.
 
@@ -63,7 +66,7 @@ class KVStore:
                 self._save()
                 return True
             return False
-    
+
     def get_all(self):
         with self._lock:
             return dict(self._store)
@@ -92,6 +95,7 @@ class KVStore:
             self._store = {}
             self._save()
 
+
 class DatabaseService(database_grpc.DatabaseServiceServicer):
     def __init__(self, db_id, peer_ids):
         self.db_id = int(db_id)
@@ -101,22 +105,21 @@ class DatabaseService(database_grpc.DatabaseServiceServicer):
         if not recovered:
             self._seed_data()
 
-
     def _seed_data(self):
         # Pre-populate with some books if store is empty.
         if self.store.get_all():
             return
         initial_books = [
-            {"id": "1", "title": "The Best Book",   "author": "Author 1", "stock": 10, "price": 9.99},
-            {"id": "2", "title": "The Best Book 2", "author": "Author 2", "stock": 5,  "price": 14.99},
-            {"id": "3", "title": "The Best Book 3", "author": "Author 3", "stock": 8,  "price": 12.99},
-            {"id": "4", "title": "The Best Book 4", "author": "Author 4", "stock": 3,  "price": 19.99},
+            {"id": "1", "title": "The Best Book", "author": "Author 1", "stock": 10, "price": 9.99},
+            {"id": "2", "title": "The Best Book 2", "author": "Author 2", "stock": 5, "price": 14.99},
+            {"id": "3", "title": "The Best Book 3", "author": "Author 3", "stock": 8, "price": 12.99},
+            {"id": "4", "title": "The Best Book 4", "author": "Author 4", "stock": 3, "price": 19.99},
             {"id": "5", "title": "The Best Book 5", "author": "Author 5", "stock": 15, "price": 7.99},
         ]
         for book in initial_books:
             self.store.write(book["id"], book)
         logger.info("Seeded initial book inventory")
-    
+
     def Read(self, request, context):
         self._log_request("Read", request)
         self._log_store(prefix="BEFORE READ")
@@ -186,7 +189,7 @@ class DatabaseService(database_grpc.DatabaseServiceServicer):
         return database.GetAllResponse(
             books=[database.Book(**b) for b in all_books.values()]
         )
-    
+
     def Sync(self, request, context):
         logger.info("[DB %s] Sync requested", self.db_id)
         all_books = self.store.get_all()
@@ -283,10 +286,12 @@ class BackupDatabaseService(DatabaseService):
         }
         ok = self.store.write(request.book.id, data)
         return database.WriteResponse(success=ok)
+
     def Delete(self, request, context):
         logger.info(f"[BACKUP {self.db_id}] Replicated delete: {request.id}")
         ok = self.store.delete(request.id)
         return database.DeleteResponse(success=ok)
+
 
 class PrimaryDatabaseService(DatabaseService):
     def __init__(self, db_id, peer_ids):
@@ -305,6 +310,7 @@ class PrimaryDatabaseService(DatabaseService):
             stub = database_grpc.DatabaseServiceStub(channel)
             self.backups.append(stub)
         logger.info(f"[PRIMARY {db_id}] Connected to backups")
+
     def Write(self, request, context):
         logger.info(f"[PRIMARY] Write: {request.book.id}")
         # 1. Local write
@@ -319,6 +325,7 @@ class PrimaryDatabaseService(DatabaseService):
                 logger.error(f"Replication failed: {e}")
                 return database.WriteResponse(success=False)
         return database.WriteResponse(success=True)
+
     def Delete(self, request, context):
         logger.info(f"[PRIMARY] Delete: {request.id}")
         response = super().Delete(request, context)
@@ -331,6 +338,7 @@ class PrimaryDatabaseService(DatabaseService):
                 logger.error(f"Replication failed: {e}")
                 return database.DeleteResponse(success=False)
         return database.DeleteResponse(success=True)
+
 
 def launch_database(db_id, peer_ids):
     primary_id = min(peer_ids)
@@ -346,6 +354,7 @@ def launch_database(db_id, peer_ids):
     server.add_insecure_port("[::]:50057")
     server.start()
     server.wait_for_termination()
+
 
 if __name__ == '__main__':
     my_id = int(os.getenv("DATABASE_ID", "1"))

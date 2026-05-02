@@ -5,14 +5,17 @@ import time
 import random
 import json
 
-#Set up logging
+# Set up logging
 import logging
+
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger("Executor")
 
-# Little price normalization because of funky floating-points 
+
+# Little price normalization because of funky floating-points
 def normalize_price(price):
     return round(price + 1e-9, 2)
+
 
 # This set of lines are needed to import the gRPC stubs.
 # The path of the stubs is relative to the current file, or absolute inside the container.
@@ -22,10 +25,12 @@ executor_grpc_path = os.path.abspath(os.path.join(FILE, '../../../utils/pb/execu
 sys.path.insert(0, executor_grpc_path)
 import executor_pb2 as executor
 import executor_pb2_grpc as executor_grpc
+
 order_queue_grpc_path = os.path.abspath(os.path.join(FILE, '../../../utils/pb/order_queue'))
 sys.path.insert(0, order_queue_grpc_path)
 import order_queue_pb2 as order_queue
 import order_queue_pb2_grpc as order_queue_grpc
+
 database_grpc_path = os.path.abspath(os.path.join(FILE, '../../../utils/pb/database'))
 sys.path.insert(0, database_grpc_path)
 import database_pb2 as database
@@ -34,12 +39,14 @@ import database_pb2_grpc as database_grpc
 import grpc
 from concurrent import futures
 
+
 class HelloService(executor_grpc.HelloServiceServicer):
     def SayHello(self, request, context):
         response = executor.HelloResponse()
         response.greeting = "Hello, " + request.name
         logger.debug(response.greeting)
         return response
+
 
 # This was made with the help of Copilot, based on a skeleton of code.
 class ExecutorService(executor_grpc.ExecutorServiceServicer):
@@ -61,7 +68,7 @@ class ExecutorService(executor_grpc.ExecutorServiceServicer):
     def _channel_for(self, peer_id):
         host = f"executor-{peer_id}:50055"
         return grpc.insecure_channel(host)
-    
+
     def _send_to_next_live(self, rpc_fn, request):
         # Try each peer in ring order, skip unreachable ones
         ids = self.peer_ids
@@ -82,7 +89,7 @@ class ExecutorService(executor_grpc.ExecutorServiceServicer):
         with self.lock:
             self.leader_id = self.my_id
         return None
-    
+
     def _check_alive(self, context):
         if not self.alive:
             context.abort(grpc.StatusCode.UNAVAILABLE, f"Executor {self.my_id} is down")
@@ -121,7 +128,7 @@ class ExecutorService(executor_grpc.ExecutorServiceServicer):
             executors_ids=ids,
             finished=False
         )
-    
+
     # Continues an existing LeaderElection -- Currently not used for bonus
     def ElectLeader(self, request, context):
         if not self._check_alive(context): return None
@@ -165,7 +172,7 @@ class ExecutorService(executor_grpc.ExecutorServiceServicer):
             executor.LeaderAnnouncementRequest(leader_id=leader, finished=False)
         )
         return executor.LeaderAnnouncementResponse(leader_id=leader, finished=False)
-    
+
     def Heartbeat(self, request, context):
         if not self._check_alive(context): return None
         with self.lock:
@@ -309,7 +316,7 @@ class ExecutorService(executor_grpc.ExecutorServiceServicer):
             with self.lock:
                 leader = self.leader_id
                 alive = self.alive
-            
+
             if not alive:
                 logger.debug(f"{self.my_id}: I am down, pausing...")
                 time.sleep(5)
@@ -347,7 +354,7 @@ class ExecutorService(executor_grpc.ExecutorServiceServicer):
                             self.leader_id = None
                         self._trigger_election()
                 time.sleep(1)
-    
+
     def _trigger_election(self):
         try:
             self._send_to_next_live(
@@ -357,6 +364,7 @@ class ExecutorService(executor_grpc.ExecutorServiceServicer):
             logger.info(f"Triggering reelection")
         except Exception as e:
             logger.error(f"Could not start election: {e}")
+
 
 # Crahing some replicas in order to show that system is dynamic
 def random_crash_simulator(service):
@@ -388,11 +396,12 @@ def random_crash_simulator(service):
         with service.lock:
             service.alive = True
             service.last_leader_heartbeat = time.time()
-        
+
         # Trigger re-election if this node has higher ID
         service._trigger_election()
 
     threading.Thread(target=_crash_and_recover, daemon=True).start()
+
 
 # This method was made with the help of Copilot from skeleton code.
 def launch_executor(executor_id, peer_ids):
@@ -416,6 +425,7 @@ def launch_executor(executor_id, peer_ids):
     # create a crash in a replica
     random_crash_simulator(service)
     grpc_server.wait_for_termination()
+
 
 if __name__ == "__main__":
     my_id = int(os.getenv("EXECUTOR_ID", "1"))
