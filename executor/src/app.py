@@ -22,7 +22,10 @@ order_queue_grpc_path = os.path.abspath(os.path.join(FILE, '../../../utils/pb/or
 sys.path.insert(0, order_queue_grpc_path)
 import order_queue_pb2 as order_queue
 import order_queue_pb2_grpc as order_queue_grpc
-
+database_grpc_path = os.path.abspath(os.path.join(FILE, '../../../utils/pb/database'))
+sys.path.insert(0, database_grpc_path)
+import database_pb2 as database
+import database_pb2_grpc as database_grpc
 
 import grpc
 from concurrent import futures
@@ -178,6 +181,55 @@ class ExecutorService(executor_grpc.ExecutorServiceServicer):
             except grpc.RpcError:
                 pass  # dead followers don't matter
 
+    # Created with the help of O365 Copilot
+    def execute_order(self, order):
+        """
+        Executes a single order against the primary database replica.
+        """
+        book_id = order.book_id
+        quantity = order.quantity
+
+        # Primary DB = lowest ID
+        primary_id = 1  # or derive from env / config
+        channel = grpc.insecure_channel(f"database-{primary_id}:50057")
+        db_stub = database_grpc.DatabaseServiceStub(channel)
+
+        try:
+            # Step 1: Read current stock
+            read_resp = db_stub.Read(database.ReadRequest(id=book_id))
+            if not read_resp.found:
+                logger.warning(f"Book {book_id} not found")
+                return False
+
+            current_stock = read_resp.book.stock
+
+            # Step 2: Validate availability
+            if current_stock < quantity:
+                logger.info(
+                    f"Insufficient stock for book {book_id}: "
+                    f"{current_stock} < {quantity}"
+                )
+                return False
+
+            # Step 3: Write updated stock
+            updated_book = database.Book(
+                id=read_resp.book.id,
+                title=read_resp.book.title,
+                author=read_resp.book.author,
+                stock=current_stock - quantity,
+                price=read_resp.book.price,
+            )
+
+            write_resp = db_stub.Write(
+                database.WriteRequest(book=updated_book)
+            )
+
+            return write_resp.success
+
+        except grpc.RpcError as e:
+            logger.error(f"Database error during order execution: {e}")
+            return False
+
     def run(self):
         HEARTBEAT_INTERVAL = 2
         LEADER_TIMEOUT = 6
@@ -227,10 +279,15 @@ class ExecutorService(executor_grpc.ExecutorServiceServicer):
                     response = self.queue_stub.Dequeue(order_queue.DequeueRequest())
                     self._broadcast_heartbeat()
                     if response.order:
-                        logger.info(f"Order is being executed: {response.order}")
+                        logger.info(f"Executing order: {response.order}")
+                        success = self.execute_order(response.order)
+                        if success:
+                            logger.info("Order executed successfully")
+                        else:
+                            logger.warning("Order execution FAILED")
                     else:
                         logger.debug("Queue empty, backing off...")
-                        time.sleep(POLL_INTERVAL)
+                        time.sleep(POLL_INTERVAL)                
                 except Exception as e:
                     logger.error(f"Dequeue error: {e}")
                     time.sleep(POLL_INTERVAL)
