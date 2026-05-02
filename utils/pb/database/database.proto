@@ -20,7 +20,7 @@ message Book {
 }
 
 message ReadRequest {
-    string title = 1;
+    string book_id = 1;
 }
 
 message ReadResponse {
@@ -28,8 +28,7 @@ message ReadResponse {
 }
 
 message WriteRequest {
-    string title = 1;
-    int32 new_stock = 2;
+    Book book = 1;
 }
 
 message WriteResponse {

@@ -4,6 +4,7 @@ import threading
 import time
 import random
 import signal
+import json
 
 #Set up logging
 import logging
@@ -84,6 +85,20 @@ class ExecutorService(executor_grpc.ExecutorServiceServicer):
             context.abort(grpc.StatusCode.UNAVAILABLE, f"Executor {self.my_id} is down")
             return False
         return True
+
+    def _load_title_to_id_map(self, db_stub):
+        """
+        Fetches all books from database and builds
+        { title -> id } mapping.
+        """
+        try:
+            resp = db_stub.GetAll(database.GetAllRequest())
+            mapping = {b.title: b.id for b in resp.books}
+            logger.info(f"Loaded title→id map: {mapping}")
+            return mapping
+        except grpc.RpcError as e:
+            logger.error(f"Failed to load catalog from database: {e}")
+            return {}
 
     # Starts a new LeaderElection
     # We use election in a ring
@@ -182,53 +197,96 @@ class ExecutorService(executor_grpc.ExecutorServiceServicer):
                 pass  # dead followers don't matter
 
     # Created with the help of O365 Copilot
-    def execute_order(self, order):
+    def _parse_order_payload(self, raw_order_json):
         """
-        Executes a single order against the primary database replica.
+        Returns a list of (book_id, quantity) tuples.
+        Expects valid JSON payload from orchestrator.
         """
-        book_id = order.book_id
-        quantity = order.quantity
+        try:
+            parsed = json.loads(raw_order_json)
+        except json.JSONDecodeError as e:
+            logger.error(f"Invalid order payload JSON: {e}")
+            return []
 
-        # Primary DB = lowest ID
-        primary_id = 1  # or derive from env / config
+        items = parsed.get("items", [])
+        result = []
+
+        for item in items:
+            try:
+                book_title = item["name"]
+                quantity = int(item["quantity"])
+                result.append((book_title, quantity))
+            except Exception as e:
+                logger.error(f"Malformed item in order payload: {e}")
+
+        return result
+
+    def execute_order(self, raw_order):
+        primary_id = 1
         channel = grpc.insecure_channel(f"database-{primary_id}:50057")
         db_stub = database_grpc.DatabaseServiceStub(channel)
-
-        try:
-            # Step 1: Read current stock
-            read_resp = db_stub.Read(database.ReadRequest(id=book_id))
-            if not read_resp.found:
-                logger.warning(f"Book {book_id} not found")
-                return False
-
-            current_stock = read_resp.book.stock
-
-            # Step 2: Validate availability
-            if current_stock < quantity:
-                logger.info(
-                    f"Insufficient stock for book {book_id}: "
-                    f"{current_stock} < {quantity}"
-                )
-                return False
-
-            # Step 3: Write updated stock
-            updated_book = database.Book(
-                id=read_resp.book.id,
-                title=read_resp.book.title,
-                author=read_resp.book.author,
-                stock=current_stock - quantity,
-                price=read_resp.book.price,
-            )
-
-            write_resp = db_stub.Write(
-                database.WriteRequest(book=updated_book)
-            )
-
-            return write_resp.success
-
-        except grpc.RpcError as e:
-            logger.error(f"Database error during order execution: {e}")
+        # Build catalog once per order
+        title_to_id = self._load_title_to_id_map(db_stub)
+        if not title_to_id:
+            logger.error("Empty catalog; cannot execute order")
             return False
+        items = self._parse_order_payload(raw_order)
+        if not items:
+            logger.error("No valid order items parsed; failing order")
+            return False
+        logger.info(f"Executing parsed order items (titles): {items}")
+        for book_title, quantity in items:
+            if book_title not in title_to_id:
+                logger.warning(f"Unknown book title '{book_title}'")
+                return False
+            book_id = title_to_id[book_title]
+            try:
+                read_resp = db_stub.Read(
+                    database.ReadRequest(book_id=book_id)
+                )
+                current_stock = read_resp.stock
+                if current_stock < quantity:
+                    logger.warning(
+                        f"Insufficient stock for '{book_title}' "
+                        f"(id={book_id}): {current_stock} < {quantity}"
+                    )
+                    return False
+                new_stock = current_stock - quantity
+                book_id = title_to_id[book_title]
+                write_resp = db_stub.Write(
+                    database.WriteRequest(
+                        book=database.Book(
+                            id=book_id,
+                            title=book_title,
+                            stock=new_stock
+                        )
+                    )
+                )
+                if not write_resp.success:
+                    logger.error(f"Write failed for '{book_title}' (id={book_id})")
+                    return False
+            except grpc.RpcError as e:
+                logger.error(f"Database RPC failed: {e}")
+                return False
+        self.log_database_state(db_stub, prefix="AFTER ORDER")
+        return True
+
+    def log_database_state(self, db_stub, prefix="DB STATE"):
+        try:
+            resp = db_stub.GetAll(database.GetAllRequest())
+            books = [
+                {
+                    "id": b.id,
+                    "title": b.title,
+                    "author": b.author,
+                    "stock": b.stock,
+                    "price": b.price,
+                }
+                for b in resp.books
+            ]
+            logger.info(f"{prefix}: {json.dumps(books, indent=2)}")
+        except Exception as e:
+            logger.error(f"Failed to log DB state: {e}")
 
     def run(self):
         HEARTBEAT_INTERVAL = 2
@@ -278,16 +336,20 @@ class ExecutorService(executor_grpc.ExecutorServiceServicer):
                 try:
                     response = self.queue_stub.Dequeue(order_queue.DequeueRequest())
                     self._broadcast_heartbeat()
-                    if response.order:
-                        logger.info(f"Executing order: {response.order}")
-                        success = self.execute_order(response.order)
-                        if success:
-                            logger.info("Order executed successfully")
-                        else:
-                            logger.warning("Order execution FAILED")
-                    else:
+                    logger.info(
+                        f"Dequeue response: success={response.success}, "
+                        f"order_id='{response.order_id}'"
+                    )
+                    if not response.success or not response.order_id:
                         logger.debug("Queue empty, backing off...")
-                        time.sleep(POLL_INTERVAL)                
+                        time.sleep(POLL_INTERVAL)
+                        continue
+                    logger.info(f"Executing order_id={response.order_id}")
+                    success = self.execute_order(response.order_payload_json)
+                    if success:
+                        logger.info("Order executed successfully")
+                    else:
+                        logger.warning("Order execution FAILED")
                 except Exception as e:
                     logger.error(f"Dequeue error: {e}")
                     time.sleep(POLL_INTERVAL)

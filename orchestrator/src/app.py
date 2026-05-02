@@ -147,13 +147,15 @@ def formatOrderData(service, order_id, request_data):
 
 # Helper function for enqueueing and deq-ing orders
 # Made with the help of Copilot
-def call_order_queue_enqueue(order_id):
+def call_order_queue_enqueue(order_id, order_payload_json):
     with grpc.insecure_channel('order_queue:50054') as channel:
         stub = order_queue_grpc.OrderQueueServiceStub(channel)
-        request = order_queue.EnqueueRequest(addable_order=order_id)
+        request = order_queue.EnqueueRequest(
+            order_id=order_id,
+            order_payload_json=order_payload_json
+        )
         response = stub.Enqueue(request)
     return response
-
 
 # Threading! with ThreadPoolExecutor
 # and asynchronous operation with asyncio
@@ -184,7 +186,11 @@ async def async_checkout_logic(order_id, request_data):
         status = "Order Rejected"
     # Enqueue only if approved
     if status == "Order Approved":
-        await run_in_thread(call_order_queue_enqueue, order_id)
+        await run_in_thread(
+            call_order_queue_enqueue,
+            order_id,
+            json.dumps(request_data)
+        )
     return {
         "orderId": order_id,
         "status": status,

@@ -17,10 +17,12 @@ class GetQueueResponse(_message.Message):
     def __init__(self, orders: _Optional[_Iterable[str]] = ...) -> None: ...
 
 class EnqueueRequest(_message.Message):
-    __slots__ = ("addable_order",)
-    ADDABLE_ORDER_FIELD_NUMBER: _ClassVar[int]
-    addable_order: str
-    def __init__(self, addable_order: _Optional[str] = ...) -> None: ...
+    __slots__ = ("order_id", "order_payload_json")
+    ORDER_ID_FIELD_NUMBER: _ClassVar[int]
+    ORDER_PAYLOAD_JSON_FIELD_NUMBER: _ClassVar[int]
+    order_id: str
+    order_payload_json: str
+    def __init__(self, order_id: _Optional[str] = ..., order_payload_json: _Optional[str] = ...) -> None: ...
 
 class EnqueueResponse(_message.Message):
     __slots__ = ("success",)
@@ -33,12 +35,14 @@ class DequeueRequest(_message.Message):
     def __init__(self) -> None: ...
 
 class DequeueResponse(_message.Message):
-    __slots__ = ("success", "order")
+    __slots__ = ("success", "order_id", "order_payload_json")
     SUCCESS_FIELD_NUMBER: _ClassVar[int]
-    ORDER_FIELD_NUMBER: _ClassVar[int]
+    ORDER_ID_FIELD_NUMBER: _ClassVar[int]
+    ORDER_PAYLOAD_JSON_FIELD_NUMBER: _ClassVar[int]
     success: bool
-    order: str
-    def __init__(self, success: bool = ..., order: _Optional[str] = ...) -> None: ...
+    order_id: str
+    order_payload_json: str
+    def __init__(self, success: bool = ..., order_id: _Optional[str] = ..., order_payload_json: _Optional[str] = ...) -> None: ...
 
 class HelloRequest(_message.Message):
     __slots__ = ("name",)

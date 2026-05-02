@@ -111,32 +111,68 @@ class DatabaseService(database_grpc.DatabaseServiceServicer):
         logger.info("Seeded initial book inventory")
     
     def Read(self, request, context):
-        logger.info(f"Read: {request.id}")
-        data = self.store.read(request.id)
+        self._log_request("Read", request)
+        self._log_store(prefix="BEFORE READ")
+        data = self.store.read(request.book_id)
         if data is None:
-            return database.ReadResponse(found=False)
-        return database.ReadResponse(
-            found=True,
-            book=database.Book(**data)
+            logger.warning(
+                "[DB %s] Read MISS for key=%r. Available keys=%s",
+                self.db_id,
+                request.book_id,
+                list(self.store.get_all().keys())
+            )
+            return database.ReadResponse(stock=0)
+
+        logger.info(
+            "[DB %s] Read HIT key=%r stock=%d",
+            self.db_id,
+            request.book_id,
+            data["stock"]
         )
-    
+        return database.ReadResponse(stock=data["stock"])
+
     def Write(self, request, context):
-        logger.info(f"Put: {request.book.id}")
-        data = {
-            "id":     request.book.id,
-            "title":  request.book.title,
-            "author": request.book.author,
-            "stock":  request.book.stock,
-            "price":  request.book.price,
-        }
-        ok = self.store.write(request.book.id, data)
+        self._log_request("Write", request)
+        self._log_store(prefix="BEFORE WRITE")
+        book = request.book
+        data = self.store.read(book.id)
+        if data is None:
+            logger.warning(
+                "[DB %s] Write FAILED. Book id=%r not found",
+                self.db_id,
+                book.id
+            )
+            return database.WriteResponse(success=False)
+        logger.info(
+            "[DB %s] Write BEFORE id=%r stock=%d -> %d",
+            self.db_id,
+            book.id,
+            data["stock"],
+            book.stock
+        )
+        data.update({
+            "id": book.id,
+            "title": book.title,
+            "author": book.author,
+            "stock": book.stock,
+            "price": book.price,
+        })
+        ok = self.store.write(book.id, data)
+        logger.info(
+            "[DB %s] Write AFTER id=%r ok=%s",
+            self.db_id,
+            book.id,
+            ok
+        )
+        self._log_store(prefix="AFTER WRITE")
         return database.WriteResponse(success=ok)
 
     def Delete(self, request, context):
         logger.info(f"Delete: {request.id}")
         ok = self.store.delete(request.id)
+        self._log_store(prefix="AFTER DELETE")
         return database.DeleteResponse(success=ok)
-    
+
     def GetAll(self, request, context):
         logger.info("GetAll")
         all_books = self.store.get_all()
@@ -144,14 +180,28 @@ class DatabaseService(database_grpc.DatabaseServiceServicer):
             books=[database.Book(**b) for b in all_books.values()]
         )
 
+    def _log_store(self, prefix="DB STORE"):
+        data = self.store.get_all()
+        logger.info(f"{prefix}: {json.dumps(data, indent=2)}")
+
+    def _log_request(self, rpc_name, request):
+        logger.info(
+            "[DB %s] %s request: %s",
+            self.db_id,
+            rpc_name,
+            request
+        )
 
 # Primary and Backup database code snippets are created from an inconsistent code skeleton
 #   with the help of O365 Copilot
 class BackupDatabaseService(DatabaseService):
     def Write(self, request, context):
-        # Only accept replication writes from primary
-        logger.info(f"[BACKUP {self.db_id}] Replicated write: {request.book.id}")
-
+        logger.info(
+            "[BACKUP %s] Replicated write id=%s stock=%d",
+            self.db_id,
+            request.book.id,
+            request.book.stock
+        )
         data = {
             "id": request.book.id,
             "title": request.book.title,

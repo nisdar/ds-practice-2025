@@ -41,30 +41,26 @@ class HelloService(order_queue_grpc.HelloServiceServicer):
 
 # This class was made with the help of Copilot from the skeleton code.
 class QueueStorage:
-    """
-    Thread‑safe queue storage.
-    """
     def __init__(self):
         self._queue = []
         self._lock = threading.Lock()
 
-    def enqueue(self, order_id):
+    def enqueue(self, order_id, payload_json):
         with self._lock:
-            self._queue.append(order_id)
+            self._queue.append((order_id, payload_json))
             logger.debug(f"Queue after enqueue: {self._queue}")
             return True
+
     def dequeue(self):
         with self._lock:
             if not self._queue:
-                logger.debug("Dequeue attempted but queue is empty.")
                 return True, None
-            removed = self._queue.pop(0)
-            logger.debug(f"Dequeued: {removed}, queue now: {self._queue}")
-            return True, removed
+            return True, self._queue.pop(0)
+
     def get_queue(self):
         with self._lock:
-            logger.debug(f"Queue read: {self._queue}")
-            return list(self._queue)
+            # Expose only order_ids for debugging / inspection
+            return [order_id for order_id, _ in self._queue]
 
 # This class was made with the help of Copilot from the skeleton code.
 class OrderQueueService(order_queue_grpc.OrderQueueServiceServicer):
@@ -79,30 +75,34 @@ class OrderQueueService(order_queue_grpc.OrderQueueServiceServicer):
             orders=queue_contents
         )
 
-
     def Enqueue(self, request, context):
-        order_id = request.addable_order
-        logger.info(f"Enqueue request: {order_id}")
-        ok = self.queue.enqueue(order_id)
-        return oq.EnqueueResponse(
-            success=ok
-        )
+        order_id = request.order_id
+        payload_json = request.order_payload_json
+        logger.info(f"Enqueue request: order_id={order_id}")
+        ok = self.queue.enqueue(order_id, payload_json)
+        if not ok:
+            context.abort(grpc.StatusCode.INTERNAL, "Queue enqueue failed")
+        return oq.EnqueueResponse(success=True)
         
     def Dequeue(self, request, context):
         logger.info("Dequeue request received")
-        ok, removed_order = self.queue.dequeue()
-        if removed_order: # Distinguish between failure and empty queue
-            logger.info(f"Dequeued order: {removed_order}")
+        ok, entry = self.queue.dequeue()
+        if not ok:
+            context.abort(grpc.StatusCode.INTERNAL, "Queue dequeue failed")
+        if entry is None:
+            logger.debug("Queue empty on dequeue")
             return oq.DequeueResponse(
                 success=True,
-                order=removed_order
+                order_id="",
+                order_payload_json=""
             )
-        else:
-            # Clearly signal "nothing to dequeue" vs a real failure
-            return oq.DequeueResponse(
-                success=False,
-                order=""
-            )
+        order_id, payload_json = entry
+        logger.info(f"Dequeued order_id={order_id}")
+        return oq.DequeueResponse(
+            success=True,
+            order_id=order_id,
+            order_payload_json=payload_json
+        )
 
 
 def serve():

@@ -22,10 +22,10 @@ class Book(_message.Message):
     def __init__(self, id: _Optional[str] = ..., title: _Optional[str] = ..., author: _Optional[str] = ..., stock: _Optional[int] = ..., price: _Optional[float] = ...) -> None: ...
 
 class ReadRequest(_message.Message):
-    __slots__ = ("title",)
-    TITLE_FIELD_NUMBER: _ClassVar[int]
-    title: str
-    def __init__(self, title: _Optional[str] = ...) -> None: ...
+    __slots__ = ("book_id",)
+    BOOK_ID_FIELD_NUMBER: _ClassVar[int]
+    book_id: str
+    def __init__(self, book_id: _Optional[str] = ...) -> None: ...
 
 class ReadResponse(_message.Message):
     __slots__ = ("stock",)
@@ -34,12 +34,10 @@ class ReadResponse(_message.Message):
     def __init__(self, stock: _Optional[int] = ...) -> None: ...
 
 class WriteRequest(_message.Message):
-    __slots__ = ("title", "new_stock")
-    TITLE_FIELD_NUMBER: _ClassVar[int]
-    NEW_STOCK_FIELD_NUMBER: _ClassVar[int]
-    title: str
-    new_stock: int
-    def __init__(self, title: _Optional[str] = ..., new_stock: _Optional[int] = ...) -> None: ...
+    __slots__ = ("book",)
+    BOOK_FIELD_NUMBER: _ClassVar[int]
+    book: Book
+    def __init__(self, book: _Optional[_Union[Book, _Mapping]] = ...) -> None: ...
 
 class WriteResponse(_message.Message):
     __slots__ = ("success",)

@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x11order_queue.proto\x12\x0border_queue\"\x11\n\x0fGetQueueRequest\"\"\n\x10GetQueueResponse\x12\x0e\n\x06orders\x18\x01 \x03(\t\"\'\n\x0e\x45nqueueRequest\x12\x15\n\raddable_order\x18\x01 \x01(\t\"\"\n\x0f\x45nqueueResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\"\x10\n\x0e\x44\x65queueRequest\"1\n\x0f\x44\x65queueResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\r\n\x05order\x18\x02 \x01(\t\"\x1c\n\x0cHelloRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\"!\n\rHelloResponse\x12\x10\n\x08greeting\x18\x01 \x01(\t2\xe8\x01\n\x11OrderQueueService\x12G\n\x08GetQueue\x12\x1c.order_queue.GetQueueRequest\x1a\x1d.order_queue.GetQueueResponse\x12\x44\n\x07\x45nqueue\x12\x1b.order_queue.EnqueueRequest\x1a\x1c.order_queue.EnqueueResponse\x12\x44\n\x07\x44\x65queue\x12\x1b.order_queue.DequeueRequest\x1a\x1c.order_queue.DequeueResponse2Q\n\x0cHelloService\x12\x41\n\x08SayHello\x12\x19.order_queue.HelloRequest\x1a\x1a.order_queue.HelloResponseb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x11order_queue.proto\x12\x0border_queue\"\x11\n\x0fGetQueueRequest\"\"\n\x10GetQueueResponse\x12\x0e\n\x06orders\x18\x01 \x03(\t\">\n\x0e\x45nqueueRequest\x12\x10\n\x08order_id\x18\x01 \x01(\t\x12\x1a\n\x12order_payload_json\x18\x02 \x01(\t\"\"\n\x0f\x45nqueueResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\"\x10\n\x0e\x44\x65queueRequest\"P\n\x0f\x44\x65queueResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x10\n\x08order_id\x18\x02 \x01(\t\x12\x1a\n\x12order_payload_json\x18\x03 \x01(\t\"\x1c\n\x0cHelloRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\"!\n\rHelloResponse\x12\x10\n\x08greeting\x18\x01 \x01(\t2\xe8\x01\n\x11OrderQueueService\x12G\n\x08GetQueue\x12\x1c.order_queue.GetQueueRequest\x1a\x1d.order_queue.GetQueueResponse\x12\x44\n\x07\x45nqueue\x12\x1b.order_queue.EnqueueRequest\x1a\x1c.order_queue.EnqueueResponse\x12\x44\n\x07\x44\x65queue\x12\x1b.order_queue.DequeueRequest\x1a\x1c.order_queue.DequeueResponse2Q\n\x0cHelloService\x12\x41\n\x08SayHello\x12\x19.order_queue.HelloRequest\x1a\x1a.order_queue.HelloResponseb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -36,19 +36,19 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_GETQUEUERESPONSE']._serialized_start=53
   _globals['_GETQUEUERESPONSE']._serialized_end=87
   _globals['_ENQUEUEREQUEST']._serialized_start=89
-  _globals['_ENQUEUEREQUEST']._serialized_end=128
-  _globals['_ENQUEUERESPONSE']._serialized_start=130
-  _globals['_ENQUEUERESPONSE']._serialized_end=164
-  _globals['_DEQUEUEREQUEST']._serialized_start=166
-  _globals['_DEQUEUEREQUEST']._serialized_end=182
-  _globals['_DEQUEUERESPONSE']._serialized_start=184
-  _globals['_DEQUEUERESPONSE']._serialized_end=233
-  _globals['_HELLOREQUEST']._serialized_start=235
-  _globals['_HELLOREQUEST']._serialized_end=263
-  _globals['_HELLORESPONSE']._serialized_start=265
-  _globals['_HELLORESPONSE']._serialized_end=298
-  _globals['_ORDERQUEUESERVICE']._serialized_start=301
-  _globals['_ORDERQUEUESERVICE']._serialized_end=533
-  _globals['_HELLOSERVICE']._serialized_start=535
-  _globals['_HELLOSERVICE']._serialized_end=616
+  _globals['_ENQUEUEREQUEST']._serialized_end=151
+  _globals['_ENQUEUERESPONSE']._serialized_start=153
+  _globals['_ENQUEUERESPONSE']._serialized_end=187
+  _globals['_DEQUEUEREQUEST']._serialized_start=189
+  _globals['_DEQUEUEREQUEST']._serialized_end=205
+  _globals['_DEQUEUERESPONSE']._serialized_start=207
+  _globals['_DEQUEUERESPONSE']._serialized_end=287
+  _globals['_HELLOREQUEST']._serialized_start=289
+  _globals['_HELLOREQUEST']._serialized_end=317
+  _globals['_HELLORESPONSE']._serialized_start=319
+  _globals['_HELLORESPONSE']._serialized_end=352
+  _globals['_ORDERQUEUESERVICE']._serialized_start=355
+  _globals['_ORDERQUEUESERVICE']._serialized_end=587
+  _globals['_HELLOSERVICE']._serialized_start=589
+  _globals['_HELLOSERVICE']._serialized_end=670
 # @@protoc_insertion_point(module_scope)
