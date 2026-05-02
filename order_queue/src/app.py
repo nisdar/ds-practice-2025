@@ -1,6 +1,5 @@
 import sys
 import os
-import re
 import threading
 
 #Set up logging
@@ -19,8 +18,6 @@ import order_queue_pb2_grpc as order_queue_grpc
 
 import grpc
 from concurrent import futures
-from concurrent.futures import ThreadPoolExecutor, as_completed
-
 
 # Create a class to define the server functions, derived from
 # order_queue_pb2_grpc.HelloServiceServicer

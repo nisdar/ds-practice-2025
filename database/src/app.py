@@ -2,8 +2,6 @@ import sys
 import os
 import threading
 import time
-import random
-import signal
 import json
 
 #Set up logging
@@ -27,7 +25,7 @@ import grpc
 from concurrent import futures
 
 class HelloService(database_grpc.HelloServiceServicer):
-    def SayHello(self, request, context):
+    def SayHello(request, context):
         response = database.HelloResponse()
         response.greeting = "Hello, " + request.name
         logger.debug(response.greeting)

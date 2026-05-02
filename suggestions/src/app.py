@@ -29,17 +29,12 @@ class HelloService(suggestions_grpc.HelloServiceServicer):
         logger.debug(response.greeting)
         return response
 
-from concurrent.futures import ThreadPoolExecutor
-
 class SuggestionsService(suggestions_grpc.SuggestionsServiceServicer):
     def __init__(self, svc_idx=2, total_svcs=3):
         self.svc_idx = svc_idx
         self.total_svcs = total_svcs
         self.orders = {}
 
-    #def init_order(self, order_id, data):
-    #    self.orders[order_id] = {"data" : data, "vc": [0] * self.total_svcs}
-    
     def merge_and_increment(self, local_vc, incoming_vc):
         for i in range(self.total_svcs):
             local_vc[i] = max(local_vc[i], incoming_vc[i])

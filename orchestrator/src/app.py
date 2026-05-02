@@ -119,7 +119,7 @@ def validate_stock_availability(order_payload):
                 )
     return True, None
 
-def formatOrderData(service, order_id, request_data):
+def format_order_data(service, order_id, request_data):
     items = request_data.get("items")
     user = request_data.get("user")
     card = request_data.get("creditCard")
@@ -179,16 +179,15 @@ def formatOrderData(service, order_id, request_data):
 def call_order_queue_enqueue(order_id, order_payload_json):
     with grpc.insecure_channel('order_queue:50054') as channel:
         stub = order_queue_grpc.OrderQueueServiceStub(channel)
-        request = order_queue.EnqueueRequest(
+        _request = order_queue.EnqueueRequest(
             order_id=order_id,
             order_payload_json=order_payload_json
         )
-        response = stub.Enqueue(request)
+        response = stub.Enqueue(_request)
     return response
 
 # Threading! with ThreadPoolExecutor
 # and asynchronous operation with asyncio
-from concurrent.futures import ThreadPoolExecutor
 import asyncio
 loop = asyncio.new_event_loop()
 asyncio.set_event_loop(loop)
@@ -210,11 +209,11 @@ async def async_checkout_logic(order_id, request_data):
         }
     # Init services
     await run_in_thread(init_fraud_detection,
-                        formatOrderData(fraud_detection, order_id, request_data))
+                        format_order_data(fraud_detection, order_id, request_data))
     await run_in_thread(init_transaction_verification,
-                        formatOrderData(transaction_verification, order_id, request_data))
+                        format_order_data(transaction_verification, order_id, request_data))
     await run_in_thread(init_suggestions,
-                        formatOrderData(suggestions, order_id, request_data))
+                        format_order_data(suggestions, order_id, request_data))
     # Begin the transaction_verification chain
     ## This could be combined with the init_transaction_verification maybe
     resp = await run_in_thread(call_transaction_verification, order_id, [0, 0, 0])

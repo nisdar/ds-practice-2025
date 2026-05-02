@@ -23,7 +23,6 @@ import fraud_detection_pb2_grpc as fraud_detection_grpc
 
 import grpc
 from concurrent import futures
-from concurrent.futures import ThreadPoolExecutor, as_completed
 
 class HelloService(transaction_verification_grpc.HelloServiceServicer):
     def SayHello(self, request, context):
@@ -140,12 +139,6 @@ class TransactionVerificationService(transaction_verification_grpc.TransactionVe
         self.total_svcs = total_svcs
         self.orders = {}
 
-    #def init_order(self, order_id, data):
-    #    self.orders[order_id] = {
-    #        "data": data,
-    #        "vc": [0] * self.total_svcs
-    #    }
-
     def merge_and_increment(self, local_vc, incoming_vc):
         for i in range(self.total_svcs):
             local_vc[i] = max(local_vc[i], incoming_vc[i])
@@ -164,9 +157,7 @@ class TransactionVerificationService(transaction_verification_grpc.TransactionVe
         incoming_vc = list(request.vectorClock.timeStamp)
         entry = self.orders.get(order_id)
         self.merge_and_increment(entry["vc"], incoming_vc)
-
         data = entry["data"]
-
         async def run_checks():
             # Round 1: a and b run in parallel
             result_a, result_b = await asyncio.gather(

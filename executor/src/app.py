@@ -3,7 +3,6 @@ import os
 import threading
 import time
 import random
-import signal
 import json
 
 #Set up logging
@@ -111,11 +110,11 @@ class ExecutorService(executor_grpc.ExecutorServiceServicer):
         logger.info(f"{self.my_id}: Starting leader election")
         ids = [self.my_id]
         next_id = self._next_peer(self.peer_ids)
-        stub = executor_grpc.ExecutorServiceStub(
+        _stub = executor_grpc.ExecutorServiceStub(
             self._channel_for(next_id)
         )
         self._send_to_next_live(
-            lambda stub, req: stub.ElectLeader(req),
+            lambda _stub, req: _stub.ElectLeader(req),
             executor.LeaderElectionRequest(executors_ids=ids, finished=False)
         )
         return executor.LeaderElectionResponse(
@@ -146,20 +145,6 @@ class ExecutorService(executor_grpc.ExecutorServiceServicer):
             executor.LeaderElectionRequest(executors_ids=ids, finished=False)
         )
         return executor.LeaderElectionResponse(executors_ids=ids, finished=False)
-
-        
-        next_id = self._next_peer(self.peer_ids)
-        stub = executor_grpc.ExecutorServiceStub(self._channel_for(next_id))
-        self._send_to_next_live(
-            lambda stub, req: stub.ElectLeader(req),
-            executor.LeaderElectionRequest(executors_ids=ids, finished=False)
-        )
-
-        return executor.LeaderElectionResponse(
-            executors_ids=ids,
-            finished=False
-        )
-
 
     # Announces the chosen leader
     def AnnounceLeader(self, request, context):
