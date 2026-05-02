@@ -35,7 +35,7 @@ class HelloService(database_grpc.HelloServiceServicer):
 
 # Little price normalization because of funky floating-points
 def normalize_price(price):
-    return round(price + 1e-9, 2)
+    return round(price + 1e-5, 2)
 
 
 # Key-Value data storage
@@ -122,7 +122,7 @@ class DatabaseService(database_grpc.DatabaseServiceServicer):
 
     def Read(self, request, context):
         self._log_request("Read", request)
-        #self._log_store(prefix="BEFORE READ")
+        self._log_store(prefix="BEFORE READ")
         data = self.store.read(request.book_id)
         if data is None:
             logger.warning(
@@ -143,7 +143,7 @@ class DatabaseService(database_grpc.DatabaseServiceServicer):
 
     def Write(self, request, context):
         self._log_request("Write", request)
-        #self._log_store(prefix="BEFORE WRITE")
+        self._log_store(prefix="BEFORE WRITE")
         book = request.book
         data = self.store.read(book.id)
         if data is None:
@@ -174,13 +174,13 @@ class DatabaseService(database_grpc.DatabaseServiceServicer):
             book.id,
             ok
         )
-        #self._log_store(prefix="AFTER WRITE")
+        self._log_store(prefix="AFTER WRITE")
         return database.WriteResponse(success=ok)
 
     def Delete(self, request, context):
         logger.info(f"Delete: {request.id}")
         ok = self.store.delete(request.id)
-        #self._log_store(prefix="AFTER DELETE")
+        self._log_store(prefix="AFTER DELETE")
         return database.DeleteResponse(success=ok)
 
     def GetAll(self, request, context):

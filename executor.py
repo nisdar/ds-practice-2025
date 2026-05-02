@@ -14,7 +14,7 @@ logger = logging.getLogger("Executor")
 
 # Little price normalization because of funky floating-points
 def normalize_price(price):
-    return round(price + 1e-5, 2)
+    return round(price + 1e-9, 2)
 
 
 # This set of lines are needed to import the gRPC stubs.
@@ -104,7 +104,7 @@ class ExecutorService(executor_grpc.ExecutorServiceServicer):
         try:
             resp = db_stub.GetAll(database.GetAllRequest())
             mapping = {b.title: b.id for b in resp.books}
-            #logger.info(f"Loaded title -> id map: {mapping}")
+            logger.info(f"Loaded title→id map: {mapping}")
             return mapping
         except grpc.RpcError as e:
             logger.error(f"Failed to load catalog from database: {e}")
@@ -275,7 +275,7 @@ class ExecutorService(executor_grpc.ExecutorServiceServicer):
                 }
                 for b in resp.books
             ]
-            #logger.info(f"{prefix}: {json.dumps(books, indent=2)}")
+            logger.info(f"{prefix}: {json.dumps(books, indent=2)}")
         except Exception as e:
             logger.error(f"Failed to log DB state: {e}")
 
