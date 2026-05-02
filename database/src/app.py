@@ -143,21 +143,80 @@ class DatabaseService(database_grpc.DatabaseServiceServicer):
         return database.GetAllResponse(
             books=[database.Book(**b) for b in all_books.values()]
         )
-    
-def launch_database(db_id, peer_ids):
-    db_id = int(db_id)
-    peer_ids = list(map(int, peer_ids))
 
-    service = DatabaseService(db_id, peer_ids)
+
+# Primary and Backup database code snippets are created from an inconsistent code skeleton
+#   with the help of O365 Copilot
+class BackupDatabaseService(DatabaseService):
+    def Write(self, request, context):
+        # Only accept replication writes from primary
+        logger.info(f"[BACKUP {self.db_id}] Replicated write: {request.book.id}")
+
+        data = {
+            "id": request.book.id,
+            "title": request.book.title,
+            "author": request.book.author,
+            "stock": request.book.stock,
+            "price": request.book.price,
+        }
+        ok = self.store.write(request.book.id, data)
+        return database.WriteResponse(success=ok)
+    def Delete(self, request, context):
+        logger.info(f"[BACKUP {self.db_id}] Replicated delete: {request.id}")
+        ok = self.store.delete(request.id)
+        return database.DeleteResponse(success=ok)
+
+class PrimaryDatabaseService(DatabaseService):
+    def __init__(self, db_id, peer_ids):
+        super().__init__(db_id, peer_ids)
+        self.backups = []
+        for peer_id in peer_ids:
+            if peer_id == db_id:
+                continue
+            channel = grpc.insecure_channel(f"database-{peer_id}:50057")
+            stub = database_grpc.DatabaseServiceStub(channel)
+            self.backups.append(stub)
+        logger.info(f"[PRIMARY {db_id}] Connected to backups")
+    def Write(self, request, context):
+        logger.info(f"[PRIMARY] Write: {request.book.id}")
+        # 1. Local write
+        response = super().Write(request, context)
+        if not response.success:
+            return response
+        # 2. Synchronous replication
+        for backup in self.backups:
+            try:
+                backup.Write(request)
+            except Exception as e:
+                logger.error(f"Replication failed: {e}")
+                return database.WriteResponse(success=False)
+        return database.WriteResponse(success=True)
+    def Delete(self, request, context):
+        logger.info(f"[PRIMARY] Delete: {request.id}")
+        response = super().Delete(request, context)
+        if not response.success:
+            return response
+        for backup in self.backups:
+            try:
+                backup.Delete(request)
+            except Exception as e:
+                logger.error(f"Replication failed: {e}")
+                return database.DeleteResponse(success=False)
+        return database.DeleteResponse(success=True)
+
+def launch_database(db_id, peer_ids):
+    primary_id = min(peer_ids)
+    if db_id == primary_id:
+        service = PrimaryDatabaseService(db_id, peer_ids)
+        logger.info(f"Replica {db_id} is PRIMARY")
+    else:
+        service = BackupDatabaseService(db_id, peer_ids)
+        logger.info(f"Replica {db_id} is BACKUP")
 
     server = grpc.server(futures.ThreadPoolExecutor())
     database_grpc.add_DatabaseServiceServicer_to_server(service, server)
-
-    port = "50057"
-    server.add_insecure_port("[::]:" + port)
+    server.add_insecure_port("[::]:50057")
     server.start()
-    logger.info(f"Database {db_id} started on port {port} with peers {peer_ids}")
-
     server.wait_for_termination()
 
 if __name__ == '__main__':
