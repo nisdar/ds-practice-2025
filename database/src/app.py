@@ -132,10 +132,10 @@ def serve():
     database_grpc.add_DatabaseServiceServicer_to_server(
         DatabaseService(), server
     )
-    port = "50056"
+    port = "50057"
     server.add_insecure_port("[::]:" + port)
     server.start()
-    logger.info("Database started on port 50056")
+    logger.info("Database started on port 50057")
     server.wait_for_termination()
 
 
