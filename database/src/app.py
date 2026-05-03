@@ -101,6 +101,7 @@ class DatabaseService(database_grpc.DatabaseServiceServicer):
         self.db_id = int(db_id)
         self.peer_ids = sorted(map(int, peer_ids))
         self.store = KVStore(persist_path='/data/books.json')
+        self.temp_updates = dict()
         recovered = self._recover_from_peers()
         if not recovered:
             self._seed_data()
@@ -140,6 +141,38 @@ class DatabaseService(database_grpc.DatabaseServiceServicer):
             data["stock"]
         )
         return database.ReadResponse(stock=data["stock"])
+
+    def PrepareUpdate(self, request, context):
+        if request.updateId in self.temp_updates:
+            logger.warning(f"Update {request.updateId} is already prepared")
+            return database.PrepareResponse(ready=False)
+        self.temp_updates[request.updateId] = request.book
+        logger.info(f"Update {request.updateId} prepared")
+        return database.PrepareResponse(ready=True)
+    
+    def CommitUpdate(self, request, context):
+        update = self.temp_updates.pop(request.updateId, None)
+        if update:
+            writeStatus = self.Write(database.WriteRequest(book=update), context)
+            if writeStatus.success:
+                logger.info(f"Update {request.updateId} committed")
+                return database.CommitResponse(success=True)
+            else:
+                logger.error(f"Failed to commit update {request.updateId}")
+                return database.CommitResponse(success=False)
+        else:
+            logger.error(f"Cannot commit update {request.updateId} because it doesn't exist")
+            return database.CommitResponse(success=False)
+    
+    def AbortUpdate(self, request, context):
+        update = self.temp_updates.pop(request.updateId, None)
+        if update:
+            #We don't need to do anything here
+            logger.info(f"Update {request.updateId} aborted")
+            return database.AbortResponse(aborted=True)
+        else:
+            logger.error(f"Cannot abort update {request.updateId} because it doesn't exist")
+            return database.AbortResponse(aborted=False)
 
     def Write(self, request, context):
         self._log_request("Write", request)

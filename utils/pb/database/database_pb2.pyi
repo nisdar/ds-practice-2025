@@ -67,6 +67,44 @@ class GetAllResponse(_message.Message):
     books: _containers.RepeatedCompositeFieldContainer[Book]
     def __init__(self, books: _Optional[_Iterable[_Union[Book, _Mapping]]] = ...) -> None: ...
 
+class PrepareRequest(_message.Message):
+    __slots__ = ("updateId", "book")
+    UPDATEID_FIELD_NUMBER: _ClassVar[int]
+    BOOK_FIELD_NUMBER: _ClassVar[int]
+    updateId: str
+    book: Book
+    def __init__(self, updateId: _Optional[str] = ..., book: _Optional[_Union[Book, _Mapping]] = ...) -> None: ...
+
+class PrepareResponse(_message.Message):
+    __slots__ = ("ready",)
+    READY_FIELD_NUMBER: _ClassVar[int]
+    ready: bool
+    def __init__(self, ready: bool = ...) -> None: ...
+
+class CommitRequest(_message.Message):
+    __slots__ = ("updateId",)
+    UPDATEID_FIELD_NUMBER: _ClassVar[int]
+    updateId: str
+    def __init__(self, updateId: _Optional[str] = ...) -> None: ...
+
+class CommitResponse(_message.Message):
+    __slots__ = ("success",)
+    SUCCESS_FIELD_NUMBER: _ClassVar[int]
+    success: bool
+    def __init__(self, success: bool = ...) -> None: ...
+
+class AbortRequest(_message.Message):
+    __slots__ = ("updateId",)
+    UPDATEID_FIELD_NUMBER: _ClassVar[int]
+    updateId: str
+    def __init__(self, updateId: _Optional[str] = ...) -> None: ...
+
+class AbortResponse(_message.Message):
+    __slots__ = ("aborted",)
+    ABORTED_FIELD_NUMBER: _ClassVar[int]
+    aborted: bool
+    def __init__(self, aborted: bool = ...) -> None: ...
+
 class HelloRequest(_message.Message):
     __slots__ = ("name",)
     NAME_FIELD_NUMBER: _ClassVar[int]

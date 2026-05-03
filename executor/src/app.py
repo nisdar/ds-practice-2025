@@ -36,6 +36,11 @@ sys.path.insert(0, database_grpc_path)
 import database_pb2 as database
 import database_pb2_grpc as database_grpc
 
+payment_grpc_path = os.path.abspath(os.path.join(FILE, '../../../utils/pb/payment'))
+sys.path.insert(0, payment_grpc_path)
+import payment_pb2 as payment
+import payment_pb2_grpc as payment_grpc
+
 import grpc
 from concurrent import futures
 
@@ -217,10 +222,12 @@ class ExecutorService(executor_grpc.ExecutorServiceServicer):
 
         return result
 
-    def execute_order(self, raw_order):
+    def execute_order(self, order_id, raw_order):
         primary_id = 1
-        channel = grpc.insecure_channel(f"database-{primary_id}:50057")
-        db_stub = database_grpc.DatabaseServiceStub(channel)
+        db_channel = grpc.insecure_channel(f"database-{primary_id}:50057")
+        db_stub = database_grpc.DatabaseServiceStub(db_channel)
+        payment_channel = grpc.insecure_channel(f"payment:50056")
+        payment_stub = payment_grpc.PaymentServiceStub(payment_channel)
         title_to_id = self._load_title_to_id_map(db_stub)
         items = self._parse_order_payload(raw_order)
         if not items:
@@ -244,23 +251,83 @@ class ExecutorService(executor_grpc.ExecutorServiceServicer):
                 )
                 return False
             planned_writes.append((read_book, read_book.stock - quantity))
-        for book, new_stock in planned_writes:
-            write_resp = db_stub.Write(
-                database.WriteRequest(
-                    book=database.Book(
-                        id=book.id,
-                        title=book.title,
-                        author=book.author,
-                        price=normalize_price(book.price),
-                        stock=new_stock
-                    )
+
+        # 2PC IMPLEMENTATION
+        #Phase 1: prepare participants
+        ready_votes = []
+        #Payment service
+        try:
+            payment_response = payment_stub.PreparePayment(
+                    payment.PrepareRequest(orderId=order_id)
                 )
-            )
-            if not write_resp.success:
-                logger.error(f"Commit failed for book id={book.id}")
-                return False
+            ready_votes.append(payment_response.ready)
+        except Exception as e:
+            logger.error(f"Exception occured when preparing payment: {e}")
+            ready_votes.append(False)
+
+        #Database service
+        i = 0
+        for book, new_stock in planned_writes:
+            try:
+                prepare_response = db_stub.PrepareUpdate(database.PrepareRequest(
+                            updateId=order_id + str(i),
+                            book=database.Book(
+                            id=book.id,
+                            title=book.title,
+                            author=book.author,
+                            price=normalize_price(book.price),
+                            stock=new_stock
+                            )
+                        )
+                    )
+                ready_votes.append(prepare_response.ready)
+            except Exception as e:
+                logger.error(f"Exception occured when preparing DB: {e}")
+                ready_votes.append(False)  
+            i += 1
+
+        #Phase 2: either commit or abort
+        success = False
+        if all(ready_votes): #COMMIT
+            try:
+                #Commit payment
+                payment_response = payment_stub.CommitPayment(
+                    payment.CommitRequest(orderId=order_id)
+                )
+                #Commit db
+                db_responses = []
+                for i in range(len(planned_writes)):
+                    db_response = db_stub.CommitUpdate(database.CommitRequest(
+                        updateId=order_id + str(i),
+                        )
+                    )
+                    db_responses.append(db_response.success)
+
+                if payment_response.success and all(db_responses):
+                    logger.info(f"Order {order_id} successfully commited for all services")
+                    success = True
+                else:
+                    logger.info(f"Failed to commit {order_id}")
+            except Exception as e:
+                logger.error(f"Exception occured when committing: {e}")
+        else: #ABORT
+            try:
+                #Abort payment
+                payment_stub.AbortPayment(
+                    payment.AbortRequest(orderId=order_id)
+                )
+                #Abort DB
+                for i in range(len(planned_writes)):
+                    db_stub.AbortUpdate(database.AbortRequest(
+                            updateId=order_id + str(i),
+                        )
+                    )
+                logger.info(f"Order {order_id} aborted")
+            except Exception as e:
+                logger.error(f"Exception occured when aborting: {e}")
+
         self.log_database_state(db_stub, prefix="AFTER ORDER")
-        return True
+        return success
 
     def log_database_state(self, db_stub, prefix="DB STATE"):
         try:
@@ -336,7 +403,7 @@ class ExecutorService(executor_grpc.ExecutorServiceServicer):
                         time.sleep(POLL_INTERVAL)
                         continue
                     logger.info(f"Executing order_id={response.order_id}")
-                    success = self.execute_order(response.order_payload_json)
+                    success = self.execute_order(response.order_id, response.order_payload_json)
                     if success:
                         logger.info("Order executed successfully")
                     else:
