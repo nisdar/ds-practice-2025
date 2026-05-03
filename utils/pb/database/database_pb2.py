@@ -25,7 +25,7 @@ _sym_db = _symbol_database.Default()
 from google.protobuf import empty_pb2 as google_dot_protobuf_dot_empty__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0e\x64\x61tabase.proto\x12\x08\x64\x61tabase\x1a\x1bgoogle/protobuf/empty.proto\"O\n\x04\x42ook\x12\n\n\x02id\x18\x01 \x01(\t\x12\r\n\x05title\x18\x02 \x01(\t\x12\x0e\n\x06\x61uthor\x18\x03 \x01(\t\x12\r\n\x05stock\x18\x04 \x01(\x05\x12\r\n\x05price\x18\x05 \x01(\x02\"\x1e\n\x0bReadRequest\x12\x0f\n\x07\x62ook_id\x18\x01 \x01(\t\"\x1d\n\x0cReadResponse\x12\r\n\x05stock\x18\x01 \x01(\x05\",\n\x0cWriteRequest\x12\x1c\n\x04\x62ook\x18\x01 \x01(\x0b\x32\x0e.database.Book\" \n\rWriteResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\"\x1b\n\rDeleteRequest\x12\n\n\x02id\x18\x01 \x01(\t\"!\n\x0e\x44\x65leteResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\"\x0f\n\rGetAllRequest\"/\n\x0eGetAllResponse\x12\x1d\n\x05\x62ooks\x18\x01 \x03(\x0b\x32\x0e.database.Book\"\x1c\n\x0cHelloRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\"!\n\rHelloResponse\x12\x10\n\x08greeting\x18\x01 \x01(\t2\xb6\x02\n\x0f\x44\x61tabaseService\x12\x35\n\x04Read\x12\x15.database.ReadRequest\x1a\x16.database.ReadResponse\x12\x38\n\x05Write\x12\x16.database.WriteRequest\x1a\x17.database.WriteResponse\x12;\n\x06\x44\x65lete\x12\x17.database.DeleteRequest\x1a\x18.database.DeleteResponse\x12;\n\x06GetAll\x12\x17.database.GetAllRequest\x1a\x18.database.GetAllResponse\x12\x38\n\x04Sync\x12\x16.google.protobuf.Empty\x1a\x18.database.GetAllResponse2K\n\x0cHelloService\x12;\n\x08SayHello\x12\x16.database.HelloRequest\x1a\x17.database.HelloResponseb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0e\x64\x61tabase.proto\x12\x08\x64\x61tabase\x1a\x1bgoogle/protobuf/empty.proto\"O\n\x04\x42ook\x12\n\n\x02id\x18\x01 \x01(\t\x12\r\n\x05title\x18\x02 \x01(\t\x12\x0e\n\x06\x61uthor\x18\x03 \x01(\t\x12\r\n\x05stock\x18\x04 \x01(\x05\x12\r\n\x05price\x18\x05 \x01(\x02\"\x1e\n\x0bReadRequest\x12\x0f\n\x07\x62ook_id\x18\x01 \x01(\t\"\x1d\n\x0cReadResponse\x12\r\n\x05stock\x18\x01 \x01(\x05\",\n\x0cWriteRequest\x12\x1c\n\x04\x62ook\x18\x01 \x01(\x0b\x32\x0e.database.Book\" \n\rWriteResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\"\x1b\n\rDeleteRequest\x12\n\n\x02id\x18\x01 \x01(\t\"!\n\x0e\x44\x65leteResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\"\x0f\n\rGetAllRequest\"/\n\x0eGetAllResponse\x12\x1d\n\x05\x62ooks\x18\x01 \x03(\x0b\x32\x0e.database.Book\"@\n\x0ePrepareRequest\x12\x10\n\x08updateId\x18\x01 \x01(\t\x12\x1c\n\x04\x62ook\x18\x02 \x01(\x0b\x32\x0e.database.Book\" \n\x0fPrepareResponse\x12\r\n\x05ready\x18\x01 \x01(\x08\"!\n\rCommitRequest\x12\x10\n\x08updateId\x18\x01 \x01(\t\"!\n\x0e\x43ommitResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\" \n\x0c\x41\x62ortRequest\x12\x10\n\x08updateId\x18\x01 \x01(\t\" \n\rAbortResponse\x12\x0f\n\x07\x61\x62orted\x18\x01 \x01(\x08\"\x1c\n\x0cHelloRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\"!\n\rHelloResponse\x12\x10\n\x08greeting\x18\x01 \x01(\t2\xff\x03\n\x0f\x44\x61tabaseService\x12\x35\n\x04Read\x12\x15.database.ReadRequest\x1a\x16.database.ReadResponse\x12\x38\n\x05Write\x12\x16.database.WriteRequest\x1a\x17.database.WriteResponse\x12;\n\x06\x44\x65lete\x12\x17.database.DeleteRequest\x1a\x18.database.DeleteResponse\x12;\n\x06GetAll\x12\x17.database.GetAllRequest\x1a\x18.database.GetAllResponse\x12\x38\n\x04Sync\x12\x16.google.protobuf.Empty\x1a\x18.database.GetAllResponse\x12\x44\n\rPrepareUpdate\x12\x18.database.PrepareRequest\x1a\x19.database.PrepareResponse\x12\x41\n\x0c\x43ommitUpdate\x12\x17.database.CommitRequest\x1a\x18.database.CommitResponse\x12>\n\x0b\x41\x62ortUpdate\x12\x16.database.AbortRequest\x1a\x17.database.AbortResponse2K\n\x0cHelloService\x12;\n\x08SayHello\x12\x16.database.HelloRequest\x1a\x17.database.HelloResponseb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -50,12 +50,24 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_GETALLREQUEST']._serialized_end=360
   _globals['_GETALLRESPONSE']._serialized_start=362
   _globals['_GETALLRESPONSE']._serialized_end=409
-  _globals['_HELLOREQUEST']._serialized_start=411
-  _globals['_HELLOREQUEST']._serialized_end=439
-  _globals['_HELLORESPONSE']._serialized_start=441
-  _globals['_HELLORESPONSE']._serialized_end=474
-  _globals['_DATABASESERVICE']._serialized_start=477
-  _globals['_DATABASESERVICE']._serialized_end=787
-  _globals['_HELLOSERVICE']._serialized_start=789
-  _globals['_HELLOSERVICE']._serialized_end=864
+  _globals['_PREPAREREQUEST']._serialized_start=411
+  _globals['_PREPAREREQUEST']._serialized_end=475
+  _globals['_PREPARERESPONSE']._serialized_start=477
+  _globals['_PREPARERESPONSE']._serialized_end=509
+  _globals['_COMMITREQUEST']._serialized_start=511
+  _globals['_COMMITREQUEST']._serialized_end=544
+  _globals['_COMMITRESPONSE']._serialized_start=546
+  _globals['_COMMITRESPONSE']._serialized_end=579
+  _globals['_ABORTREQUEST']._serialized_start=581
+  _globals['_ABORTREQUEST']._serialized_end=613
+  _globals['_ABORTRESPONSE']._serialized_start=615
+  _globals['_ABORTRESPONSE']._serialized_end=647
+  _globals['_HELLOREQUEST']._serialized_start=649
+  _globals['_HELLOREQUEST']._serialized_end=677
+  _globals['_HELLORESPONSE']._serialized_start=679
+  _globals['_HELLORESPONSE']._serialized_end=712
+  _globals['_DATABASESERVICE']._serialized_start=715
+  _globals['_DATABASESERVICE']._serialized_end=1226
+  _globals['_HELLOSERVICE']._serialized_start=1228
+  _globals['_HELLOSERVICE']._serialized_end=1303
 # @@protoc_insertion_point(module_scope)

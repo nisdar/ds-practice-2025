@@ -10,6 +10,9 @@ service DatabaseService {
     rpc Delete (DeleteRequest) returns (DeleteResponse);
     rpc GetAll (GetAllRequest) returns (GetAllResponse);
     rpc Sync(google.protobuf.Empty) returns (GetAllResponse);
+    rpc PrepareUpdate (PrepareRequest) returns (PrepareResponse);
+    rpc CommitUpdate (CommitRequest) returns (CommitResponse);
+    rpc AbortUpdate (AbortRequest) returns (AbortResponse);
 }
 
 message Book {
@@ -46,6 +49,32 @@ message DeleteResponse {
 message GetAllRequest {}
 message GetAllResponse {
     repeated Book books = 1;
+}
+
+
+message PrepareRequest {
+    string updateId = 1;
+    Book book = 2;
+}
+
+message PrepareResponse {
+    bool ready = 1;
+}
+
+message CommitRequest {
+    string updateId = 1;
+}
+
+message CommitResponse {
+    bool success = 1;
+}
+
+message AbortRequest {
+    string updateId = 1;
+}
+
+message AbortResponse {
+    bool aborted = 1;
 }
 
 service HelloService {

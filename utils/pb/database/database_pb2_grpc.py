@@ -60,6 +60,21 @@ class DatabaseServiceStub(object):
                 request_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
                 response_deserializer=database__pb2.GetAllResponse.FromString,
                 _registered_method=True)
+        self.PrepareUpdate = channel.unary_unary(
+                '/database.DatabaseService/PrepareUpdate',
+                request_serializer=database__pb2.PrepareRequest.SerializeToString,
+                response_deserializer=database__pb2.PrepareResponse.FromString,
+                _registered_method=True)
+        self.CommitUpdate = channel.unary_unary(
+                '/database.DatabaseService/CommitUpdate',
+                request_serializer=database__pb2.CommitRequest.SerializeToString,
+                response_deserializer=database__pb2.CommitResponse.FromString,
+                _registered_method=True)
+        self.AbortUpdate = channel.unary_unary(
+                '/database.DatabaseService/AbortUpdate',
+                request_serializer=database__pb2.AbortRequest.SerializeToString,
+                response_deserializer=database__pb2.AbortResponse.FromString,
+                _registered_method=True)
 
 
 class DatabaseServiceServicer(object):
@@ -95,6 +110,24 @@ class DatabaseServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def PrepareUpdate(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def CommitUpdate(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def AbortUpdate(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_DatabaseServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -122,6 +155,21 @@ def add_DatabaseServiceServicer_to_server(servicer, server):
                     servicer.Sync,
                     request_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
                     response_serializer=database__pb2.GetAllResponse.SerializeToString,
+            ),
+            'PrepareUpdate': grpc.unary_unary_rpc_method_handler(
+                    servicer.PrepareUpdate,
+                    request_deserializer=database__pb2.PrepareRequest.FromString,
+                    response_serializer=database__pb2.PrepareResponse.SerializeToString,
+            ),
+            'CommitUpdate': grpc.unary_unary_rpc_method_handler(
+                    servicer.CommitUpdate,
+                    request_deserializer=database__pb2.CommitRequest.FromString,
+                    response_serializer=database__pb2.CommitResponse.SerializeToString,
+            ),
+            'AbortUpdate': grpc.unary_unary_rpc_method_handler(
+                    servicer.AbortUpdate,
+                    request_deserializer=database__pb2.AbortRequest.FromString,
+                    response_serializer=database__pb2.AbortResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -259,6 +307,87 @@ class DatabaseService(object):
             '/database.DatabaseService/Sync',
             google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
             database__pb2.GetAllResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def PrepareUpdate(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/database.DatabaseService/PrepareUpdate',
+            database__pb2.PrepareRequest.SerializeToString,
+            database__pb2.PrepareResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def CommitUpdate(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/database.DatabaseService/CommitUpdate',
+            database__pb2.CommitRequest.SerializeToString,
+            database__pb2.CommitResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def AbortUpdate(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/database.DatabaseService/AbortUpdate',
+            database__pb2.AbortRequest.SerializeToString,
+            database__pb2.AbortResponse.FromString,
             options,
             channel_credentials,
             insecure,

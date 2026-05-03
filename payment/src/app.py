@@ -25,6 +25,9 @@ class PaymentService(payment_grpc.PaymentServiceServicer):
         self.order_statuses = dict()
 
     def PreparePayment(self, request, context):
+        # Add some dummy payment validation logic here
+
+        # Prepare payment
         if request.orderId in self.order_statuses:
             logger.error(f"Order {request.orderId} cannot be prepared because it is already in state {self.order_statuses[request.orderId]}")
             return payment.PrepareResponse(ready=False)
@@ -33,6 +36,7 @@ class PaymentService(payment_grpc.PaymentServiceServicer):
         return payment.PrepareResponse(ready=True)
         
     def CommitPayment(self, request, context):
+        # Committing the payment. Should be self-explanatory
         if request.orderId not in self.order_statuses:
             logger.error(f"Order {request.orderId} cannot be commited because it has not been prepared")
             return payment.CommitResponse(success=False)
@@ -45,6 +49,7 @@ class PaymentService(payment_grpc.PaymentServiceServicer):
             return payment.CommitResponse(success=True)
 
     def AbortPayment(self, request, context):
+        # Aborting the payment. Should be self-explanatory
         if request.orderId not in self.order_statuses:
             logger.error(f"Order {request.orderId} cannot be commited because it has not been prepared")
             return payment.AbortResponse(aborted=False)
