@@ -12,7 +12,7 @@ Contains the `protobuf` description for `fraud_detection` and the gRPC code gene
 ### `fraud_detection.proto`
 Has two `message` objects:
 - `FraudRequest` - contains a string `card_number`, initialized as `1`, and a floating point number `order_amount`, initialized as `2`.
-- `FraudResponse` - constains a simple boolean value `is_fraud`, determining whether a response is considered fraudulent or not.
+- `FraudResponse` - contains a simple boolean value `is_fraud`, determining whether a response is considered fraudulent or not.
 
 Additionally contains service `FraudDetectionService`, what defines an RPC call for `CheckFraud`, which takes a `FraudRequest` as an input and returns a `FraudResponse`.
 

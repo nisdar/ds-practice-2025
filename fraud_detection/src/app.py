@@ -3,8 +3,9 @@ import os
 import re
 from google.protobuf.empty_pb2 import Empty
 
-#Set up logging
+# Set up logging
 import logging
+
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger("Fraud detection")
 
@@ -25,6 +26,7 @@ import suggestions_pb2_grpc as suggestions_grpc
 import grpc
 from concurrent import futures
 import asyncio
+
 
 # Create a class to define the server functions, derived from
 # fraud_detection_pb2_grpc.HelloServiceServicer
@@ -68,15 +70,16 @@ class OrderAmountChecker:
         return True, None
 
 
-from concurrent.futures import ThreadPoolExecutor
 ## asynchronously calling the services
 async def async_check_user_data(card_number):
     loop = asyncio.get_running_loop()
     return await loop.run_in_executor(None, UserDataChecker(), card_number)
 
+
 async def async_check_credit_card_data(card_number):
     loop = asyncio.get_running_loop()
     return await loop.run_in_executor(None, CreditCardDataChecker(), card_number)
+
 
 async def async_check_order_amount(amount):
     loop = asyncio.get_running_loop()
@@ -95,12 +98,12 @@ class FraudDetectionService(fraud_detection_grpc.FraudDetectionServiceServicer):
         logger.info(f"InitFraudDetection called for order {order_id}")
         self.orders[order_id] = {"data": request, "vc": [0] * self.total_svcs}
         return Empty()
-    
+
     def merge_and_increment(self, local_vc, incoming_vc):
         for i in range(self.total_svcs):
             local_vc[i] = max(local_vc[i], incoming_vc[i])
         local_vc[self.svc_idx] += 1
-    
+
     def increment(self, local_vc):
         local_vc[self.svc_idx] += 1
 

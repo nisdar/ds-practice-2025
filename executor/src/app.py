@@ -3,12 +3,19 @@ import os
 import threading
 import time
 import random
-import signal
+import json
 
-#Set up logging
+# Set up logging
 import logging
+
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger("Executor")
+
+
+# Little price normalization because of funky floating-points
+def normalize_price(price):
+    return round(price + 1e-5, 2)
+
 
 # This set of lines are needed to import the gRPC stubs.
 # The path of the stubs is relative to the current file, or absolute inside the container.
@@ -18,14 +25,20 @@ executor_grpc_path = os.path.abspath(os.path.join(FILE, '../../../utils/pb/execu
 sys.path.insert(0, executor_grpc_path)
 import executor_pb2 as executor
 import executor_pb2_grpc as executor_grpc
+
 order_queue_grpc_path = os.path.abspath(os.path.join(FILE, '../../../utils/pb/order_queue'))
 sys.path.insert(0, order_queue_grpc_path)
 import order_queue_pb2 as order_queue
 import order_queue_pb2_grpc as order_queue_grpc
 
+database_grpc_path = os.path.abspath(os.path.join(FILE, '../../../utils/pb/database'))
+sys.path.insert(0, database_grpc_path)
+import database_pb2 as database
+import database_pb2_grpc as database_grpc
 
 import grpc
 from concurrent import futures
+
 
 class HelloService(executor_grpc.HelloServiceServicer):
     def SayHello(self, request, context):
@@ -33,6 +46,7 @@ class HelloService(executor_grpc.HelloServiceServicer):
         response.greeting = "Hello, " + request.name
         logger.debug(response.greeting)
         return response
+
 
 # This was made with the help of Copilot, based on a skeleton of code.
 class ExecutorService(executor_grpc.ExecutorServiceServicer):
@@ -54,7 +68,7 @@ class ExecutorService(executor_grpc.ExecutorServiceServicer):
     def _channel_for(self, peer_id):
         host = f"executor-{peer_id}:50055"
         return grpc.insecure_channel(host)
-    
+
     def _send_to_next_live(self, rpc_fn, request):
         # Try each peer in ring order, skip unreachable ones
         ids = self.peer_ids
@@ -75,12 +89,26 @@ class ExecutorService(executor_grpc.ExecutorServiceServicer):
         with self.lock:
             self.leader_id = self.my_id
         return None
-    
+
     def _check_alive(self, context):
         if not self.alive:
             context.abort(grpc.StatusCode.UNAVAILABLE, f"Executor {self.my_id} is down")
             return False
         return True
+
+    def _load_title_to_id_map(self, db_stub):
+        """
+        Fetches all books from database and builds
+        { title -> id } mapping.
+        """
+        try:
+            resp = db_stub.GetAll(database.GetAllRequest())
+            mapping = {b.title: b.id for b in resp.books}
+            #logger.info(f"Loaded title -> id map: {mapping}")
+            return mapping
+        except grpc.RpcError as e:
+            logger.error(f"Failed to load catalog from database: {e}")
+            return {}
 
     # Starts a new LeaderElection
     # We use election in a ring
@@ -89,18 +117,18 @@ class ExecutorService(executor_grpc.ExecutorServiceServicer):
         logger.info(f"{self.my_id}: Starting leader election")
         ids = [self.my_id]
         next_id = self._next_peer(self.peer_ids)
-        stub = executor_grpc.ExecutorServiceStub(
+        _stub = executor_grpc.ExecutorServiceStub(
             self._channel_for(next_id)
         )
         self._send_to_next_live(
-            lambda stub, req: stub.ElectLeader(req),
+            lambda _stub, req: _stub.ElectLeader(req),
             executor.LeaderElectionRequest(executors_ids=ids, finished=False)
         )
         return executor.LeaderElectionResponse(
             executors_ids=ids,
             finished=False
         )
-    
+
     # Continues an existing LeaderElection -- Currently not used for bonus
     def ElectLeader(self, request, context):
         if not self._check_alive(context): return None
@@ -125,20 +153,6 @@ class ExecutorService(executor_grpc.ExecutorServiceServicer):
         )
         return executor.LeaderElectionResponse(executors_ids=ids, finished=False)
 
-        
-        next_id = self._next_peer(self.peer_ids)
-        stub = executor_grpc.ExecutorServiceStub(self._channel_for(next_id))
-        self._send_to_next_live(
-            lambda stub, req: stub.ElectLeader(req),
-            executor.LeaderElectionRequest(executors_ids=ids, finished=False)
-        )
-
-        return executor.LeaderElectionResponse(
-            executors_ids=ids,
-            finished=False
-        )
-
-
     # Announces the chosen leader
     def AnnounceLeader(self, request, context):
         if not self._check_alive(context): return None
@@ -158,7 +172,7 @@ class ExecutorService(executor_grpc.ExecutorServiceServicer):
             executor.LeaderAnnouncementRequest(leader_id=leader, finished=False)
         )
         return executor.LeaderAnnouncementResponse(leader_id=leader, finished=False)
-    
+
     def Heartbeat(self, request, context):
         if not self._check_alive(context): return None
         with self.lock:
@@ -177,6 +191,93 @@ class ExecutorService(executor_grpc.ExecutorServiceServicer):
                 stub.Heartbeat(executor.HeartbeatRequest(leader_id=self.my_id))
             except grpc.RpcError:
                 pass  # dead followers don't matter
+
+    # Created with the help of O365 Copilot
+    def _parse_order_payload(self, raw_order_json):
+        """
+        Returns a list of (book_id, quantity) tuples.
+        Expects valid JSON payload from orchestrator.
+        """
+        try:
+            parsed = json.loads(raw_order_json)
+        except json.JSONDecodeError as e:
+            logger.error(f"Invalid order payload JSON: {e}")
+            return []
+
+        items = parsed.get("items", [])
+        result = []
+
+        for item in items:
+            try:
+                book_title = item["name"]
+                quantity = int(item["quantity"])
+                result.append((book_title, quantity))
+            except Exception as e:
+                logger.error(f"Malformed item in order payload: {e}")
+
+        return result
+
+    def execute_order(self, raw_order):
+        primary_id = 1
+        channel = grpc.insecure_channel(f"database-{primary_id}:50057")
+        db_stub = database_grpc.DatabaseServiceStub(channel)
+        title_to_id = self._load_title_to_id_map(db_stub)
+        items = self._parse_order_payload(raw_order)
+        if not items:
+            logger.error("No valid order items parsed")
+            return False
+        planned_writes = []
+        for book_title, quantity in items:
+            if book_title not in title_to_id:
+                logger.warning(f"Unknown book '{book_title}'")
+                return False
+            book_id = title_to_id[book_title]
+            books = db_stub.GetAll(database.GetAllRequest()).books
+            read_book = next((b for b in books if b.id == book_id), None)
+            if read_book is None:
+                logger.warning(f"Book id {book_id} not found in DB")
+                return False
+            if read_book.stock < quantity:
+                logger.warning(
+                    f"Insufficient stock for '{book_title}' "
+                    f"(id={book_id}): {read_book.stock} < {quantity}"
+                )
+                return False
+            planned_writes.append((read_book, read_book.stock - quantity))
+        for book, new_stock in planned_writes:
+            write_resp = db_stub.Write(
+                database.WriteRequest(
+                    book=database.Book(
+                        id=book.id,
+                        title=book.title,
+                        author=book.author,
+                        price=normalize_price(book.price),
+                        stock=new_stock
+                    )
+                )
+            )
+            if not write_resp.success:
+                logger.error(f"Commit failed for book id={book.id}")
+                return False
+        self.log_database_state(db_stub, prefix="AFTER ORDER")
+        return True
+
+    def log_database_state(self, db_stub, prefix="DB STATE"):
+        try:
+            resp = db_stub.GetAll(database.GetAllRequest())
+            books = [
+                {
+                    "id": b.id,
+                    "title": b.title,
+                    "author": b.author,
+                    "stock": b.stock,
+                    "price": normalize_price(b.price),
+                }
+                for b in resp.books
+            ]
+            #logger.info(f"{prefix}: {json.dumps(books, indent=2)}")
+        except Exception as e:
+            logger.error(f"Failed to log DB state: {e}")
 
     def run(self):
         HEARTBEAT_INTERVAL = 2
@@ -215,7 +316,7 @@ class ExecutorService(executor_grpc.ExecutorServiceServicer):
             with self.lock:
                 leader = self.leader_id
                 alive = self.alive
-            
+
             if not alive:
                 logger.debug(f"{self.my_id}: I am down, pausing...")
                 time.sleep(5)
@@ -226,11 +327,20 @@ class ExecutorService(executor_grpc.ExecutorServiceServicer):
                 try:
                     response = self.queue_stub.Dequeue(order_queue.DequeueRequest())
                     self._broadcast_heartbeat()
-                    if response.order:
-                        logger.info(f"Order is being executed: {response.order}")
-                    else:
+                    logger.info(
+                        f"Dequeue response: success={response.success}, "
+                        f"order_id='{response.order_id}'"
+                    )
+                    if not response.success or not response.order_id:
                         logger.debug("Queue empty, backing off...")
                         time.sleep(POLL_INTERVAL)
+                        continue
+                    logger.info(f"Executing order_id={response.order_id}")
+                    success = self.execute_order(response.order_payload_json)
+                    if success:
+                        logger.info("Order executed successfully")
+                    else:
+                        logger.warning("Order execution FAILED")
                 except Exception as e:
                     logger.error(f"Dequeue error: {e}")
                     time.sleep(POLL_INTERVAL)
@@ -244,7 +354,7 @@ class ExecutorService(executor_grpc.ExecutorServiceServicer):
                             self.leader_id = None
                         self._trigger_election()
                 time.sleep(1)
-    
+
     def _trigger_election(self):
         try:
             self._send_to_next_live(
@@ -254,6 +364,7 @@ class ExecutorService(executor_grpc.ExecutorServiceServicer):
             logger.info(f"Triggering reelection")
         except Exception as e:
             logger.error(f"Could not start election: {e}")
+
 
 # Crahing some replicas in order to show that system is dynamic
 def random_crash_simulator(service):
@@ -285,11 +396,12 @@ def random_crash_simulator(service):
         with service.lock:
             service.alive = True
             service.last_leader_heartbeat = time.time()
-        
+
         # Trigger re-election if this node has higher ID
         service._trigger_election()
 
     threading.Thread(target=_crash_and_recover, daemon=True).start()
+
 
 # This method was made with the help of Copilot from skeleton code.
 def launch_executor(executor_id, peer_ids):
@@ -313,6 +425,7 @@ def launch_executor(executor_id, peer_ids):
     # create a crash in a replica
     random_crash_simulator(service)
     grpc_server.wait_for_termination()
+
 
 if __name__ == "__main__":
     my_id = int(os.getenv("EXECUTOR_ID", "1"))

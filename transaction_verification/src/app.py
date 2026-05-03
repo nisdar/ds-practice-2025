@@ -3,8 +3,9 @@ import os
 import re
 from google.protobuf.empty_pb2 import Empty
 
-#Set up logging
+# Set up logging
 import logging
+
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger("Transaction verification")
 
@@ -16,6 +17,7 @@ transaction_verification_grpc_path = os.path.abspath(os.path.join(FILE, '../../.
 sys.path.insert(0, transaction_verification_grpc_path)
 import transaction_verification_pb2 as transaction_verification
 import transaction_verification_pb2_grpc as transaction_verification_grpc
+
 fraud_detection_grpc_path = os.path.abspath(os.path.join(FILE, '../../../utils/pb/fraud_detection'))
 sys.path.insert(0, fraud_detection_grpc_path)
 import fraud_detection_pb2 as fraud_detection
@@ -23,7 +25,7 @@ import fraud_detection_pb2_grpc as fraud_detection_grpc
 
 import grpc
 from concurrent import futures
-from concurrent.futures import ThreadPoolExecutor, as_completed
+
 
 class HelloService(transaction_verification_grpc.HelloServiceServicer):
     def SayHello(self, request, context):
@@ -31,6 +33,7 @@ class HelloService(transaction_verification_grpc.HelloServiceServicer):
         response.greeting = "Hello, " + request.name
         logger.debug(response.greeting)
         return response
+
 
 # The following classes were created with the help of Copilot
 #   based on an existing transaction verification function,
@@ -45,6 +48,7 @@ class ItemDataChecker:
             if not re.fullmatch(quantity_regex, item.quantity):
                 return False, "Invalid item quantity"
         return True, None
+
 
 class UserChecker:
     def __call__(self, user):
@@ -107,31 +111,39 @@ class ShippingMethodChecker:
             return False, "Invalid shipping method"
         return True, None
 
+
 import asyncio
+
 
 async def async_check_item_data(items):
     loop = asyncio.get_running_loop()
     return await loop.run_in_executor(None, ItemDataChecker(), items)
 
+
 async def async_check_user(user):
     loop = asyncio.get_running_loop()
     return await loop.run_in_executor(None, UserChecker(), user)
+
 
 async def async_check_comment(comment):
     loop = asyncio.get_running_loop()
     return await loop.run_in_executor(None, CommentChecker(), comment)
 
+
 async def async_check_billing_address(billing):
     loop = asyncio.get_running_loop()
     return await loop.run_in_executor(None, BillingAddressChecker(), billing)
+
 
 async def async_check_credit_card(card):
     loop = asyncio.get_running_loop()
     return await loop.run_in_executor(None, CreditCardChecker(), card)
 
+
 async def async_check_shipping_method(method):
     loop = asyncio.get_running_loop()
     return await loop.run_in_executor(None, ShippingMethodChecker(), method)
+
 
 # This class was also remade with the help of Copilot to combine the refactored classes.
 class TransactionVerificationService(transaction_verification_grpc.TransactionVerificationServiceServicer):
@@ -140,38 +152,31 @@ class TransactionVerificationService(transaction_verification_grpc.TransactionVe
         self.total_svcs = total_svcs
         self.orders = {}
 
-    #def init_order(self, order_id, data):
-    #    self.orders[order_id] = {
-    #        "data": data,
-    #        "vc": [0] * self.total_svcs
-    #    }
-
     def merge_and_increment(self, local_vc, incoming_vc):
         for i in range(self.total_svcs):
             local_vc[i] = max(local_vc[i], incoming_vc[i])
         local_vc[self.svc_idx] += 1
-    
+
     def increment(self, local_vc):
         local_vc[self.svc_idx] += 1
 
     def InitTransactionVerification(self, request, context):
         order_id = request.orderId
-        self.orders[order_id] = {"data" : request, "vc": [0] * self.total_svcs}
+        self.orders[order_id] = {"data": request, "vc": [0] * self.total_svcs}
         return Empty()
-    
+
     def VerifyTransaction(self, request, context):
         order_id = request.id
         incoming_vc = list(request.vectorClock.timeStamp)
         entry = self.orders.get(order_id)
         self.merge_and_increment(entry["vc"], incoming_vc)
-
         data = entry["data"]
 
         async def run_checks():
             # Round 1: a and b run in parallel
             result_a, result_b = await asyncio.gather(
-                async_check_item_data(data.items),   # event a
-                async_check_user(data.user),          # event b
+                async_check_item_data(data.items),  # event a
+                async_check_user(data.user),  # event b
             )
             self.increment(entry["vc"])  # tick for event a
             self.increment(entry["vc"])  # tick for event b
@@ -184,9 +189,9 @@ class TransactionVerificationService(transaction_verification_grpc.TransactionVe
             # Round 2: c (needs a) and d-trigger (needs b) run in parallel
             # c = card format check, b's result gates fraud_detection's d
             ok_b, err_b = result_b
-            
+
             result_c, result_comment, result_addr, result_ship = await asyncio.gather(
-                async_check_credit_card(data.creditCard),      # event c (after a)
+                async_check_credit_card(data.creditCard),  # event c (after a)
                 async_check_comment(data.comment),
                 async_check_billing_address(data.billingAddress),
                 async_check_shipping_method(data.shippingMethod),
@@ -201,8 +206,8 @@ class TransactionVerificationService(transaction_verification_grpc.TransactionVe
                 return None, err_b or "User validation failed"
 
             for (ok, err), msg in zip(
-                [result_c, result_comment, result_addr, result_ship],
-                ["Credit card invalid", "Comment invalid", "Address invalid", "Shipping invalid"]
+                    [result_c, result_comment, result_addr, result_ship],
+                    ["Credit card invalid", "Comment invalid", "Address invalid", "Shipping invalid"]
             ):
                 if not ok:
                     return None, err or msg
@@ -234,6 +239,7 @@ class TransactionVerificationService(transaction_verification_grpc.TransactionVe
                 vectorClock=fraud_detection.VectorClock(timeStamp=entry["vc"])
             ))
         return response
+
 
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor())
