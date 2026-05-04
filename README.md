@@ -65,5 +65,5 @@ And then run each service individually.
 ![Consistency Protocol diagram](https://github.com/nisdar/ds-practice-2025/blob/master/diagrams/Consistency.drawio.svg)
 
 #### Distributed Commitment Protocol diagram
-![Distributed Commitment Protocol diagram 1](https://github.com/nisdar/ds-practice-2025/blob/master/diagrams/Distributed_Commitment.drawio.svg)
-![Distributed Commitment Protocol diagram 2](https://github.com/nisdar/ds-practice-2025/blob/master/diagrams/Distributed_Commitment2.drawio.svg)
+![Distributed Commitment Protocol diagram 1](https://github.com/nisdar/ds-practice-2025/blob/master/diagrams/distrcom1.drawio.svg)
+![Distributed Commitment Protocol diagram 2](https://github.com/nisdar/ds-practice-2025/blob/master/diagrams/distrcom2.drawio.svg)
