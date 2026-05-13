@@ -111,11 +111,11 @@ class DatabaseService(database_grpc.DatabaseServiceServicer):
         if self.store.get_all():
             return
         initial_books = [
-            {"id": "1", "title": "The Best Book", "author": "Author 1", "stock": 10, "price": 9.99},
-            {"id": "2", "title": "The Best Book 2", "author": "Author 2", "stock": 5, "price": 14.99},
-            {"id": "3", "title": "The Best Book 3", "author": "Author 3", "stock": 8, "price": 12.99},
-            {"id": "4", "title": "The Best Book 4", "author": "Author 4", "stock": 3, "price": 19.99},
-            {"id": "5", "title": "The Best Book 5", "author": "Author 5", "stock": 15, "price": 7.99},
+            {"id": "1", "title": "The Best Book", "author": "Author 1", "stock": 100000, "price": 9.99},
+            {"id": "2", "title": "The Best Book 2", "author": "Author 2", "stock": 200000, "price": 14.99},
+            {"id": "3", "title": "The Best Book 3", "author": "Author 3", "stock": 100000, "price": 12.99},
+            {"id": "4", "title": "The Best Book 4", "author": "Author 4", "stock": 100000, "price": 19.99},
+            {"id": "5", "title": "The Best Book 5", "author": "Author 5", "stock": 100000, "price": 7.99},
         ]
         for book in initial_books:
             self.store.write(book["id"], book)
